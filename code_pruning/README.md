@@ -14,10 +14,10 @@
 
 ## Datasets
 
-| Dataset              | Samples | Dim | Acquisition                        |
-| -------------------- | ------- | --- | ---------------------------------- |
-| CodeSearchNet-Python | 453,499 | 768 | Auto-download (`datasets` library) |
-| CodeSearchNet-Java   | 491,506 | 768 | Auto-download (`datasets` library) |
+| Dataset              | Samples | Dim | Metric | Acquisition                        |
+| -------------------- | ------- | --- | ------ | ---------------------------------- |
+| CodeSearchNet-Python | 453,499 | 768 | MRR    | Auto-download (`datasets` library) |
+| CodeSearchNet-Java   | 491,506 | 768 | MRR    | Auto-download (`datasets` library) |
 
 ```python
 from datasets import load_dataset
@@ -32,42 +32,70 @@ ds = load_dataset("bigcode/the-stack", data_dir="data/python")
 pip install -r requirements.txt
 ```
 
-### Experiment 1: End-to-End (Table 3)
+### Exp 1: End-to-End (Table 3)
 
 ```bash
-# Run all modes (original + IV-aligned), 1000 clusters, 5 runs
 python run_inmemory_ablation_v2.py --mode all --n_clusters 1000 --n_runs 5
-
-# Paper results: Python 50.05s → 23.57s (-52.91%), Java 63.54s → 29.83s (-53.05%)
+# Paper: Python 50.05s → 23.57s (-52.91%), Java 63.54s → 29.83s (-53.05%)
 ```
 
-### Experiment 2: Ablation (Table 4)
+### Exp 2: Ablation (Table 4)
 
 ```bash
-# Individual invariants
 python run_inmemory_ablation_v2.py --mode baseline --n_clusters 1000 --n_runs 5
 python run_inmemory_ablation_v2.py --mode ann --n_clusters 1000 --n_runs 5
 python run_inmemory_ablation_v2.py --mode reuse --n_clusters 1000 --n_runs 5
 python run_inmemory_ablation_v2.py --mode topk --n_clusters 1000 --n_runs 5
 ```
 
-### Experiment 5: Cross-Setup (Table 7)
+### Exp 4: Overhead (Table 6)
 
 ```bash
-# Milvus
-python run_milvus_simple.py --n_clusters 1000
+python measure_build_query_cache.py
+# Reports: build time, query time, peak cache size
+```
 
-# Spark
-python run_spark_fixed.py --n_clusters 1000
+### Exp 5: Cross-Setup (Table 7)
+
+```bash
+python run_milvus_simple.py --n_clusters 1000      # Milvus
+python run_spark_fixed.py --n_clusters 1000        # Spark
+```
+
+### Exp 7: Dataset Size (Figure 4 top)
+
+```bash
+python run_scip_scaling.py
+python eval_scaling_mrr.py
+# Varies dataset size ratio, reports recall + task performance + runtime ratio
+```
+
+### Exp 8: Cache Capacity (Figure 4 bottom-right)
+
+SCIP is covered by the multi-algorithm cache benchmark:
+
+```bash
+# Run from active_learning/ directory
+python run_cache_benchmark_multi.py --algorithms SCIP
+```
+
+### Exp 9: ANN Sweep (Figure 5)
+
+```bash
+python run_ann_hyperparam_codepruning.py
+# Sweeps nlist/nprobe, reports selection recall + search time ratio
 ```
 
 ## Key Files
 
-| File                          | Description                                       |
-| ----------------------------- | ------------------------------------------------- |
-| `main.py`                     | Core SCIP algorithm                               |
-| `embeddings.py`               | Code embedding generation                         |
-| `run_inmemory_ablation_v2.py` | In-memory ablation: Original / +IV1 / +IV2 / +IV3 |
-| `run_milvus_simple.py`        | Milvus vector-database setup                      |
-| `run_spark_fixed.py`          | Spark distributed setup                           |
-| `data_loading.py`             | Dataset loading utilities                         |
+| File                                | Description                  |
+| ----------------------------------- | ---------------------------- |
+| `main.py`                           | Core SCIP algorithm          |
+| `run_inmemory_ablation_v2.py`       | E2E + ablation (Exp 1, 2)    |
+| `measure_build_query_cache.py`      | Overhead measurement (Exp 4) |
+| `run_milvus_simple.py`              | Milvus (Exp 5)               |
+| `run_spark_fixed.py`                | Spark (Exp 5)                |
+| `run_scip_scaling.py`               | Dataset size ratio (Exp 7)   |
+| `run_ann_hyperparam_codepruning.py` | ANN sweep (Exp 9)            |
+| `embeddings.py`                     | Code embedding generation    |
+| `data_loading.py`                   | Dataset loading              |

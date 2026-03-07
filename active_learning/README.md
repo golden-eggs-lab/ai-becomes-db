@@ -13,10 +13,10 @@
 
 ## Datasets
 
-| Dataset | Samples | Dim | Acquisition        |
-| ------- | ------- | --- | ------------------ |
-| SST-2   | 67,349  | 768 | `bash get_data.sh` |
-| IMDB    | 25,000  | 768 | `bash get_data.sh` |
+| Dataset | Samples | Dim | Metric   | Acquisition        |
+| ------- | ------- | --- | -------- | ------------------ |
+| SST-2   | 67,349  | 768 | Accuracy | `bash get_data.sh` |
+| IMDB    | 25,000  | 768 | Accuracy | `bash get_data.sh` |
 
 ## Reproducing Results
 
@@ -27,29 +27,54 @@ pip install -r requirements.txt
 bash get_data.sh
 ```
 
-### Experiment 1: End-to-End (Table 3)
+### Exp 1: End-to-End (Table 3)
 
 ```bash
-# Original vs IV-aligned comparison
 bash run_optimization_comparison.sh
-
-# Paper results: SST-2 1472.87s → 283.21s (-80.77%), IMDB 53.75s → 42.48s (-20.97%)
+# Paper: SST-2 1472.87s → 283.21s (-80.77%), IMDB 53.75s → 42.48s (-20.97%)
 ```
 
-### Experiment 2: Ablation (Table 4)
+### Exp 2: Ablation (Table 4)
 
 ```bash
 bash run_ablation.sh
+# Tests: Original / +IV1 / +IV2 / +All
 ```
 
-### Experiment 5: Cross-Setup (Table 7)
+### Exp 4: Overhead (Table 6)
 
 ```bash
-# Milvus
-bash run_milvus_comparison.sh
+python measure_cache_memory.py
+# Reports: peak cache size for probability reuse
+```
 
-# Spark
-python benchmark_spark_knn.py
+### Exp 5: Cross-Setup (Table 7)
+
+```bash
+bash run_milvus_comparison.sh       # Milvus vector-database
+python benchmark_spark_knn.py       # Spark distributed
+```
+
+### Exp 7: Dataset Size (Figure 4 top)
+
+```bash
+bash run_imdb_scaling.sh
+# Varies dataset size ratio, reports recall + task performance + runtime ratio
+```
+
+### Exp 8: Cache Capacity (Figure 4 bottom-right)
+
+```bash
+python run_cache_benchmark_multi.py --algorithms CAL
+python run_cache_benchmark_ratio.py
+# Multi-algorithm cache benchmark covering CAL, KNNPrompting, SCIP, CRAIG, SemDeDup
+```
+
+### Exp 9: ANN Sweep (Figure 5)
+
+```bash
+python run_ann_hyperparam_cal.py
+# Sweeps nlist/nprobe, reports selection recall + search time ratio
 ```
 
 ### View Results
@@ -59,38 +84,17 @@ python show_acc.py
 python show_acc.py --ablation
 ```
 
-## Key Arguments
-
-| Argument                | Description                                                  | Default |
-| ----------------------- | ------------------------------------------------------------ | ------- |
-| `--use_sklearn_ann`     | Enable IV1 (ANN via BallTree)                                | False   |
-| `--cache_probabilities` | Enable IV2 (probability reuse)                               | False   |
-| `--use_milvus`          | Use Milvus vector-database setup                             | False   |
-| `--milvus_index_type`   | Milvus index: FLAT (original) / IVF_FLAT (IV-aligned) / HNSW | FLAT    |
-
-### Example Commands
-
-```bash
-# Original
-python run_al.py --dataset_name sst-2 --acquisition cal \
-    --use_sklearn_ann False --cache_probabilities False
-
-# IV-Aligned (IV1 + IV2)
-python run_al.py --dataset_name sst-2 --acquisition cal \
-    --use_sklearn_ann True --cache_probabilities True
-
-# Milvus (IV-aligned)
-python run_al.py --dataset_name sst-2 --acquisition cal \
-    --use_milvus True --milvus_index_type IVF_FLAT --cache_probabilities True
-```
-
 ## Key Files
 
 | File                             | Description                                  |
 | -------------------------------- | -------------------------------------------- |
 | `run_al.py`                      | Main active learning experiment              |
 | `acquisition/cal.py`             | CAL with IV1 (ANN) + IV2 (probability reuse) |
-| `benchmark_spark_knn.py`         | Spark distributed setup                      |
-| `run_optimization_comparison.sh` | In-memory: original vs IV-aligned            |
-| `run_ablation.sh`                | Ablation study                               |
-| `run_milvus_comparison.sh`       | Milvus vector-database setup                 |
+| `run_optimization_comparison.sh` | E2E comparison (Exp 1)                       |
+| `run_ablation.sh`                | Ablation study (Exp 2)                       |
+| `measure_cache_memory.py`        | Overhead measurement (Exp 4)                 |
+| `benchmark_spark_knn.py`         | Spark distributed (Exp 5)                    |
+| `run_milvus_comparison.sh`       | Milvus (Exp 5)                               |
+| `run_imdb_scaling.sh`            | Dataset size ratio (Exp 7)                   |
+| `run_cache_benchmark_multi.py`   | Cache capacity sweep (Exp 8)                 |
+| `run_ann_hyperparam_cal.py`      | ANN sweep (Exp 9)                            |

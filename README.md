@@ -2,7 +2,7 @@
 
 **When AI Pipelines Become Database Workloads: An Experimental Study of Similarity, Reuse, and Ranking**
 
-This repository contains the source code and experiment scripts for reproducing results in the paper. We study eight embedding-centric ML algorithms across six DCAI tasks and show that their execution bottlenecks correspond to violations of three **database execution invariants**. Aligning execution with these invariants consistently reduces runtime while preserving task performance.
+This repository contains the source code and experiment scripts for reproducing all results in the paper. We study eight embedding-centric ML algorithms across six DCAI tasks and show that their execution bottlenecks correspond to violations of three **database execution invariants**. Aligning execution with these invariants consistently reduces runtime while preserving task performance.
 
 ## Execution Invariants
 
@@ -26,8 +26,6 @@ This repository contains the source code and experiment scripts for reproducing 
 
 ## System Setups
 
-Each algorithm is evaluated under up to three execution environments:
-
 | Setup               | Technology                         | Description                                          |
 | ------------------- | ---------------------------------- | ---------------------------------------------------- |
 | **In-Memory**       | FAISS / scikit-learn / NearPy      | Single-machine, all data in CPU memory               |
@@ -36,17 +34,119 @@ Each algorithm is evaluated under up to three execution environments:
 
 ## Experiments
 
-| #   | Experiment                | Paper Reference         | Script Location                          |
-| --- | ------------------------- | ----------------------- | ---------------------------------------- |
-| 1   | End-to-End Evaluation     | Table 3                 | Each algorithm's main script             |
-| 2   | Ablation of IV1/IV2/IV3   | Table 4                 | `run_ablation.*` scripts                 |
-| 3   | Component-Level Breakdown | Table 5                 | Breakdown fields in E2E/ablation scripts |
-| 4   | Execution Overhead        | Table 6                 | Build/query time fields in scripts       |
-| 5   | Cross-Setup Evaluation    | Table 7                 | In-memory + Milvus + Spark scripts       |
-| 6   | Memory Constraint         | Figure 3                | CRAIG memory-limited scripts             |
-| 7   | Dataset Size Ratio        | Figure 4 (top)          | Ratio sampling scripts                   |
-| 8   | Cache Capacity            | Figure 4 (bottom-right) | Cache size sweep scripts                 |
-| 9   | ANN Hyper-Parameter Sweep | Figure 5                | ANN sweep scripts                        |
+The paper presents 9 experiments. The table below shows which algorithms are covered in each experiment and where the corresponding scripts are located.
+
+### Exp 1: End-to-End Evaluation (Table 3)
+
+Compares original vs IV-aligned runtime and task performance.
+
+| Algorithm     | Script                                                                 |
+| ------------- | ---------------------------------------------------------------------- |
+| CAL           | `active_learning/run_optimization_comparison.sh`                       |
+| DEFT-UCS      | `coreset_selection/deftucs/run_finetune_comparison.py`                 |
+| CRAIG         | `coreset_selection/craig/run_craig_benchmark.py`                       |
+| SemDeDup      | `semantic_dedup/experiments/run_cifar10_experiment.py`                 |
+| KNN-OOD       | `ood_detection/run_imagenet.py`, `ood_detection/run_cifar10_knnood.py` |
+| KNN Prompting | `knn_prompting/run_comparison.sh`                                      |
+| SCIP          | `code_pruning/run_inmemory_ablation_v2.py --mode all`                  |
+
+### Exp 2: Ablation of IV1/IV2/IV3 (Table 4)
+
+Individual and combined effects of each invariant.
+
+| Algorithm | Script                                                                      |
+| --------- | --------------------------------------------------------------------------- |
+| CAL       | `active_learning/run_ablation.sh`                                           |
+| DEFT-UCS  | `coreset_selection/deftucs/run_ablation.py`                                 |
+| SemDeDup  | `semantic_dedup/scripts/run_ablation.sh`                                    |
+| SCIP      | `code_pruning/run_inmemory_ablation_v2.py --mode {baseline,ann,reuse,topk}` |
+
+### Exp 3: Component-Level Breakdown (Table 5)
+
+Breakdown timing fields are included in E2E / ablation script outputs.
+
+### Exp 4: Execution Overhead (Table 6)
+
+Build vs query time and peak cache size.
+
+| Algorithm | Script                                                     |
+| --------- | ---------------------------------------------------------- |
+| CAL       | `active_learning/measure_cache_memory.py`                  |
+| CRAIG     | `coreset_selection/craig/measure_build_query_cache.py`     |
+| SemDeDup  | `semantic_dedup/measure_semdedup_memory.py`                |
+| KNN-OOD   | Build/query time logged in `ood_detection/run_imagenet.py` |
+| SCIP      | `code_pruning/measure_build_query_cache.py`                |
+
+### Exp 5: Cross-Setup Evaluation (Table 7)
+
+In-memory, vector-database, and distributed setups.
+
+| Algorithm     | Milvus                                          | Spark                                 |
+| ------------- | ----------------------------------------------- | ------------------------------------- |
+| CAL           | `run_milvus_comparison.sh`                      | `benchmark_spark_knn.py`              |
+| DEFT-UCS      | `run_milvus_comparison.py`                      | —                                     |
+| CRAIG         | `run_craig_benchmark.py --backend milvus/spark` | same                                  |
+| SemDeDup      | `run_cifar10_milvus_experiment.py`              | `run_semdedup_spark.py`               |
+| KNN-OOD       | `run_milvus_benchmark.py`                       | `run_imagenet_spark_lsh_optimized.py` |
+| KNN Prompting | `run_milvus_comparison.sh`                      | `run_spark_comparison.sh`             |
+| SCIP          | `run_milvus_simple.py`                          | `run_spark_fixed.py`                  |
+
+### Exp 6: Memory Constraint (Figure 3)
+
+Runtime under constrained memory budgets (CRAIG).
+
+| Script                                                    | Description               |
+| --------------------------------------------------------- | ------------------------- |
+| `coreset_selection/craig/run_memory_experiment.py`        | NearPy-based memory sweep |
+| `coreset_selection/craig/run_faiss_memory_experiment.py`  | FAISS-based memory sweep  |
+| `coreset_selection/craig/run_memory_experiment_v2.py`     | Extended version          |
+| `coreset_selection/craig/run_memory_experiment_1class.py` | Per-class runtime         |
+
+### Exp 7: Dataset Size Ratio (Figure 4 top)
+
+Selection recall, task performance, and runtime ratio under varying dataset sizes.
+
+| Algorithm | Script                                                |
+| --------- | ----------------------------------------------------- |
+| CAL       | `active_learning/run_imdb_scaling.sh`                 |
+| DEFT-UCS  | `coreset_selection/deftucs/run_scaling_experiment.py` |
+| SemDeDup  | `semantic_dedup/run_scaling_experiment.py`            |
+| KNN-OOD   | `ood_detection/run_scaling.sh`                        |
+| SCIP      | `code_pruning/run_scip_scaling.py`                    |
+
+### Exp 8: Cache Capacity Sensitivity (Figure 4 bottom-right)
+
+Runtime ratio under varying LRU cache sizes for 5 algorithms with IV2 (reuse).
+
+| Script                                         | Description                                     |
+| ---------------------------------------------- | ----------------------------------------------- |
+| `active_learning/run_cache_benchmark_multi.py` | Covers CAL, KNNPrompting, SCIP, CRAIG, SemDeDup |
+| `active_learning/run_cache_benchmark_ratio.py` | Ratio-based cache sweep                         |
+
+### Exp 9: ANN Hyper-Parameter Sweep (Figure 5)
+
+Selection recall, task performance, and search time under nlist/nprobe sweeps.
+
+| Algorithm | Script                                                    |
+| --------- | --------------------------------------------------------- |
+| CAL       | `active_learning/run_ann_hyperparam_cal.py`               |
+| CRAIG     | `coreset_selection/craig/run_ann_hyperparam_craig.py`     |
+| DEFT-UCS  | `coreset_selection/deftucs/run_ann_hyperparam_coreset.py` |
+| SemDeDup  | `semantic_dedup/run_ann_hyperparameter_study.py`          |
+| KNN-OOD   | `ood_detection/run_ann_hyperparam_ood.py`                 |
+| SCIP      | `code_pruning/run_ann_hyperparam_codepruning.py`          |
+
+### Plotting Scripts
+
+Cross-algorithm plotting scripts are in [`draw/`](draw/):
+
+| Script                             | Experiment                       |
+| ---------------------------------- | -------------------------------- |
+| `plot_ann_hyperparam_multitask.py` | Exp 9: ANN sweep (Figure 5)      |
+| `plot_ann_sweep_separate_v3.py`    | Exp 9: ANN sweep (per-algorithm) |
+| `plot_cache_benchmark_multi.py`    | Exp 8: Cache capacity (Figure 4) |
+| `plot_cache_benchmark_ratio.py`    | Exp 8: Cache ratio               |
+| `plot_scaling_results.py`          | Exp 7: Dataset size (Figure 4)   |
 
 ## Repository Structure
 
@@ -60,7 +160,8 @@ ai-becomes-db/
 ├── semantic_dedup/    # SemDeDup: IV1 (ANN) + IV2 (Search Results Reuse)
 ├── ood_detection/     # KNN-OOD: IV1 (ANN with GPU)
 ├── knn_prompting/     # KNN Prompting: IV2 (Intermediate Results Reuse)
-└── code_pruning/      # SCIP: IV1 + IV2 (Distance Reuse) + IV3 (Top-k)
+├── code_pruning/      # SCIP: IV1 + IV2 (Distance Reuse) + IV3 (Top-k)
+└── draw/              # Cross-algorithm plotting scripts
 ```
 
 ## Datasets
@@ -68,8 +169,8 @@ ai-becomes-db/
 | Algorithm            | Dataset                      | Acquisition                                 |
 | -------------------- | ---------------------------- | ------------------------------------------- |
 | CRAIG                | MNIST, Fashion-MNIST         | Auto-download (`tensorflow.keras.datasets`) |
-| DEFT-UCS             | CoEDIT, WikiLarge            | See README for download instructions        |
-| CAL                  | SST-2, IMDB                  | Auto-download (`torchvision` / HuggingFace) |
+| DEFT-UCS             | CoEDIT, WikiLarge            | `python prepare_data.py` (auto-download)    |
+| CAL                  | SST-2, IMDB                  | `bash get_data.sh`                          |
 | SemDeDup / FairDeDup | CIFAR-10, CIFAR-100          | Auto-download (`torchvision`)               |
 | KNN-OOD              | ImageNet-1K, CIFAR-10        | ImageNet: manual; CIFAR-10: auto            |
 | KNN Prompting        | SST-2, AGNews                | Included in `data/` or HuggingFace          |

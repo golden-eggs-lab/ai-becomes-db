@@ -14,10 +14,10 @@
 
 ## Datasets
 
-| Dataset   | Samples | Dim | Acquisition                              |
-| --------- | ------- | --- | ---------------------------------------- |
-| CoEDIT    | 69,071  | 768 | `python prepare_data.py` (auto-download) |
-| WikiLarge | 148,843 | 768 | `python prepare_data.py` (auto-download) |
+| Dataset   | Samples | Dim | Metric                    | Acquisition              |
+| --------- | ------- | --- | ------------------------- | ------------------------ |
+| CoEDIT    | 69,071  | 768 | SARI, BLEU, ROUGE-L, FKGL | `python prepare_data.py` |
+| WikiLarge | 148,843 | 768 | SARI, BLEU, ROUGE-L, FKGL | `python prepare_data.py` |
 
 ## Reproducing Results
 
@@ -28,50 +28,49 @@ pip install -r requirements.txt
 python prepare_data.py
 ```
 
-### Experiment 1: End-to-End (Table 3)
+### Exp 1: End-to-End (Table 3)
 
 ```bash
-# Selection + Fine-tune + Evaluation: original vs IV-aligned
 python run_finetune_comparison.py --setting both
-
-# Paper results: CoEDIT 24.98s → 14.51s (-41.91%), WikiLarge 135.64s → 79.43s (-41.44%)
+# Paper: CoEDIT 24.98s → 14.51s (-41.91%), WikiLarge 135.64s → 79.43s (-41.44%)
 ```
 
-### Experiment 2: Ablation (Table 4)
+### Exp 2: Ablation (Table 4)
 
 ```bash
 python run_ablation.py
 # Tests: Original / +IV1 / +IV2 / +IV3 / +All
 ```
 
-### Experiment 5: Vector-Database Setup (Table 7)
+### Exp 5: Cross-Setup (Table 7)
 
 ```bash
 python run_milvus_comparison.py
 ```
 
-### Selection-Only Benchmark
+### Exp 7: Dataset Size (Figure 4 top)
 
 ```bash
-python run_comparison.py
+python run_scaling_experiment.py
+# Varies dataset size ratio, reports recall + task performance + runtime ratio
+```
+
+### Exp 9: ANN Sweep (Figure 5)
+
+```bash
+python run_ann_hyperparam_coreset.py
+# Sweeps nlist/nprobe, reports selection recall + search time ratio
 ```
 
 ## Key Files
 
-| File                         | Description                                             |
-| ---------------------------- | ------------------------------------------------------- |
-| `coreset_selection.py`       | Core selection: original and IV-aligned implementations |
-| `run_finetune_comparison.py` | E2E: selection → fine-tune → evaluation                 |
-| `run_comparison.py`          | Selection-only time benchmark                           |
-| `run_ablation.py`            | Ablation: IV1/IV2/IV3 individually and combined         |
-| `run_milvus_comparison.py`   | Milvus vector-database setup                            |
-| `evaluate.py`                | SARI, BLEU, ROUGE-L, FKGL metrics                       |
-| `prepare_data.py`            | Data preparation                                        |
-
-## Key Arguments
-
-| Argument      | Description                                                | Default               |
-| ------------- | ---------------------------------------------------------- | --------------------- |
-| `--setting`   | `baseline` (original), `optimized` (IV-aligned), or `both` | `both`                |
-| `--eval-only` | Only run evaluation (skip training)                        | False                 |
-| `--model`     | Model name                                                 | `google/flan-t5-base` |
+| File                            | Description                                     |
+| ------------------------------- | ----------------------------------------------- |
+| `coreset_selection.py`          | Core selection: original and IV-aligned         |
+| `run_finetune_comparison.py`    | E2E: selection → fine-tune → evaluation (Exp 1) |
+| `run_comparison.py`             | Selection-only time benchmark                   |
+| `run_ablation.py`               | Ablation study (Exp 2)                          |
+| `run_milvus_comparison.py`      | Milvus vector-database (Exp 5)                  |
+| `run_scaling_experiment.py`     | Dataset size ratio (Exp 7)                      |
+| `run_ann_hyperparam_coreset.py` | ANN sweep (Exp 9)                               |
+| `evaluate.py`                   | SARI, BLEU, ROUGE-L, FKGL metrics               |
