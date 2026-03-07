@@ -1,0 +1,19 @@
+# Core dependencies for KNN-OOD experiments
+# AWS deployment (CPU-only, no GPU/torch required)
+
+# Numerical computing (lock to 1.x for ylib compatibility)
+numpy>=1.21.0,<2.0.0
+scipy>=1.7.0
+scikit-learn>=1.0.0
+
+# Vector search
+faiss-cpu>=1.7.0
+
+# Vector database (for Milvus experiments)
+pymilvus>=2.3.0
+
+# Distributed computing (for Spark experiments)
+pyspark>=3.3.0
+
+# Utilities
+matplotlib>=3.5.0
