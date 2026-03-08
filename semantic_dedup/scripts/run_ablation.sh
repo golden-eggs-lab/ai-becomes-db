@@ -4,27 +4,21 @@
 set -e
 
 echo "=============================================="
-echo "FairDeDup Ablation Study"
+echo "FairDeDup & SemDeDup Ablation Study"
 echo "=============================================="
 
 SEED=42
 
-# Run 3 times with different seeds for statistical significance
-for run_id in run1 run2 run3; do
-    echo ""
-    echo "Running FAISS experiment: $run_id"
-    python experiments/run_experiment.py \
-        --seed $SEED \
-        --run-id $run_id
-done
+# Instead of just calling run_experiment.py three times,
+# we need to be running it in the right mode for the ablation configurations.
+# We will use the run_cifar10_experiment.py
 
 echo ""
-echo "Running Milvus experiment..."
-python experiments/run_milvus_experiment.py \
-    --seed $SEED \
-    --run-id milvus
+echo "Running Ablation experiments..."
+python experiments/run_cifar10_experiment.py
 
 echo ""
 echo "=============================================="
 echo "All experiments completed!"
 echo "=============================================="
+

@@ -47,6 +47,16 @@ python knn_prompting.py \
 # Paper: SST-2 111.03s → 70.74s (-36.29%), AGNews 144.75s → 71.01s (-50.94%)
 ```
 
+### Exp 2 & Exp 3: Ablation (Table 4) & Component Breakdown (Table 5)
+
+```bash
+# Exp 2: Ablation (Original vs IV1 vs All)
+bash run_comparison.sh
+
+# Exp 3: Component Breakdown (Isolating Intermediate Results Reuse)
+python run_breakdown_knnprompting.py --runs 3
+```
+
 ### Exp 5: Cross-Setup (Table 7)
 
 ```bash
@@ -63,21 +73,22 @@ KNN Prompting is covered by the multi-algorithm cache benchmark:
 python run_cache_benchmark_multi.py --algorithms KNNPrompting
 ```
 
-### Batch Comparison
+### Batch Comparison (Exp 2)
 
 ```bash
-bash run_comparison.sh              # In-memory: original vs IV-aligned
+bash run_comparison.sh              # In-memory: original vs IV-aligned ablation
 ```
 
 ## Key Files
 
-| File                       | Description                                         |
-| -------------------------- | --------------------------------------------------- |
-| `knn_prompting.py`         | Main entry point (Exp 1, 5)                         |
-| `utils/anchor.py`          | Original AnchorStore (computes log(k_i) at runtime) |
-| `utils/anchor_reuse.py`    | IV-aligned: pre-computed log(k_i) reuse             |
-| `utils/anchor_milvus.py`   | Milvus (Exp 5)                                      |
-| `utils/anchor_spark.py`    | Spark (Exp 5)                                       |
-| `run_comparison.sh`        | In-memory comparison                                |
-| `run_milvus_comparison.sh` | Milvus comparison                                   |
-| `run_spark_comparison.sh`  | Spark comparison                                    |
+| File                            | Description                                         |
+| ------------------------------- | --------------------------------------------------- |
+| `knn_prompting.py`              | Main entry point (Exp 1, 5)                         |
+| `utils/anchor.py`               | Original AnchorStore (computes log(k_i) at runtime) |
+| `utils/anchor_reuse.py`         | IV-aligned: pre-computed log(k_i) reuse             |
+| `utils/anchor_milvus.py`        | Milvus (Exp 5)                                      |
+| `utils/anchor_spark.py`         | Spark (Exp 5)                                       |
+| `run_comparison.sh`             | In-memory comparison / Ablation (Exp 2)             |
+| `run_breakdown_knnprompting.py` | Inference component breakdown (Exp 3)               |
+| `run_milvus_comparison.sh`      | Milvus comparison                                   |
+| `run_spark_comparison.sh`       | Spark comparison                                    |

@@ -8,7 +8,7 @@ Enhancements:
 4. Reuse savings rate (computation saved)
 
 Usage:
-    python run_inmemory_ablation_v2.py --mode baseline --n_clusters 1000 --n_runs 5
+    python run_inmemory_ablation_v2.py --mode original --n_clusters 1000 --n_runs 5
 """
 
 import os
@@ -415,13 +415,12 @@ def run_experiment(mode: str, cfg: Config):
     # Load embeddings
     embeddings = load_embeddings(cfg)
     
-    # Select algorithm
     algo_map = {
-        "baseline": scip_baseline,
-        "optimized": scip_optimized,
-        "ann": scip_ann_only,
-        "reuse": scip_reuse_only,
-        "topk": scip_topk_only,
+        "original": scip_baseline,
+        "iv-aligned": scip_optimized,
+        "iv1": scip_ann_only,
+        "iv2": scip_reuse_only,
+        "iv3": scip_topk_only,
     }
     
     if mode not in algo_map:
@@ -458,23 +457,23 @@ def run_experiment(mode: str, cfg: Config):
         breakdown_std[step] = float(np.std(times))
         breakdown_individual[step] = [float(t) for t in times]
     
-    # Calculate ANN recall (if not baseline)
+    # Calculate ANN recall (if not original)
     ann_recall = None
-    if mode == "ann":
-        # Load baseline labels for comparison
-        baseline_labels_path = os.path.join(cfg.output_dir, "baseline_labels.npy")
-        if os.path.exists(baseline_labels_path):
-            baseline_labels = np.load(baseline_labels_path)
+    if mode == "iv1":
+        # Load original labels for comparison
+        original_labels_path = os.path.join(cfg.output_dir, "original_labels.npy")
+        if os.path.exists(original_labels_path):
+            original_labels = np.load(original_labels_path)
             # Calculate label agreement
-            ann_recall = float(np.mean(all_labels[0] == baseline_labels))
+            ann_recall = float(np.mean(all_labels[0] == original_labels))
     
-    # Save baseline labels for ANN recall calculation
-    if mode == "baseline":
-        np.save(os.path.join(cfg.output_dir, "baseline_labels.npy"), all_labels[0])
+    # Save original labels for ANN recall calculation
+    if mode == "original":
+        np.save(os.path.join(cfg.output_dir, "original_labels.npy"), all_labels[0])
     
     # Calculate reuse savings rate
     reuse_savings_rate = None
-    if mode == "reuse" and all_reuse_counts[0] > 0:
+    if mode == "iv2" and all_reuse_counts[0] > 0:
         N = len(embeddings)
         # Baseline computes distances for all N samples twice (initial + remaining)
         # Reuse only computes once and reuses
@@ -501,7 +500,7 @@ def run_experiment(mode: str, cfg: Config):
             print(f"    Run {i+1}: {val:.4f}s")
     
     if ann_recall is not None:
-        print(f"\nANN Recall (label agreement with baseline): {ann_recall*100:.2f}%")
+        print(f"\nANN Recall (label agreement with original): {ann_recall*100:.2f}%")
     
     if reuse_savings_rate is not None:
         print(f"\nReuse Savings Rate: {reuse_savings_rate*100:.2f}%")
@@ -540,7 +539,7 @@ def run_experiment(mode: str, cfg: Config):
 def main():
     parser = argparse.ArgumentParser(description="In-Memory SCIP Ablation Experiments v2")
     parser.add_argument("--mode", type=str, required=True,
-                        choices=["baseline", "optimized", "ann", "reuse", "topk"])
+                        choices=["original", "iv-aligned", "iv1", "iv2", "iv3"])
     parser.add_argument("--n_runs", type=int, default=5)
     parser.add_argument("--n_clusters", type=int, default=1000)
     parser.add_argument("--output_dir", type=str, default="./experiments/ablation")

@@ -14,15 +14,15 @@ This repository contains the source code and experiment scripts for reproducing 
 
 ## Algorithms
 
-| Task                | Algorithm              | Invariants    | Directory                                                  |
-| ------------------- | ---------------------- | ------------- | ---------------------------------------------------------- |
-| Coreset Selection   | **CRAIG** [43]         | IV1, IV2      | [`coreset_selection/craig/`](coreset_selection/craig/)     |
-| Coreset Selection   | **DEFT-UCS** [13]      | IV1, IV2, IV3 | [`coreset_selection/deftucs/`](coreset_selection/deftucs/) |
-| Active Learning     | **CAL** [40]           | IV1, IV2      | [`active_learning/`](active_learning/)                     |
-| Semantic Dedup      | **SemDeDup** [1]       | IV1, IV2      | [`semantic_dedup/`](semantic_dedup/)                       |
-| OOD Detection       | **KNN-OOD** [58]       | IV1           | [`ood_detection/`](ood_detection/)                         |
-| In-Context Learning | **KNN Prompting** [66] | IV2           | [`knn_prompting/`](knn_prompting/)                         |
-| Code Data Pruning   | **SCIP** [68]          | IV1, IV2, IV3 | [`code_pruning/`](code_pruning/)                           |
+| Task                | Algorithm                | Invariants    | Directory                                                  |
+| ------------------- | ------------------------ | ------------- | ---------------------------------------------------------- |
+| Coreset Selection   | **CRAIG** [43]           | IV1, IV2      | [`coreset_selection/craig/`](coreset_selection/craig/)     |
+| Coreset Selection   | **DEFT-UCS** [13]        | IV1, IV2, IV3 | [`coreset_selection/deftucs/`](coreset_selection/deftucs/) |
+| Active Learning     | **CAL** [40]             | IV1, IV2      | [`active_learning/`](active_learning/)                     |
+| Semantic Dedup      | **SemDeDup & FairDeDup** | IV1, IV2      | [`semantic_dedup/`](semantic_dedup/)                       |
+| OOD Detection       | **KNN-OOD** [58]         | IV1           | [`ood_detection/`](ood_detection/)                         |
+| In-Context Learning | **KNN Prompting** [66]   | IV2           | [`knn_prompting/`](knn_prompting/)                         |
+| Code Data Pruning   | **SCIP** [68]            | IV1, IV2, IV3 | [`code_pruning/`](code_pruning/)                           |
 
 ## System Setups
 
@@ -40,26 +40,26 @@ The paper presents 9 experiments. The table below shows which algorithms are cov
 
 Compares original vs IV-aligned runtime and task performance.
 
-| Algorithm     | Script                                                                 |
-| ------------- | ---------------------------------------------------------------------- |
-| CAL           | `active_learning/run_optimization_comparison.sh`                       |
-| DEFT-UCS      | `coreset_selection/deftucs/run_finetune_comparison.py`                 |
-| CRAIG         | `coreset_selection/craig/run_craig_benchmark.py`                       |
-| SemDeDup      | `semantic_dedup/experiments/run_cifar10_experiment.py`                 |
-| KNN-OOD       | `ood_detection/run_imagenet.py`, `ood_detection/run_cifar10_knnood.py` |
-| KNN Prompting | `knn_prompting/run_comparison.sh`                                      |
-| SCIP          | `code_pruning/run_inmemory_ablation_v2.py --mode all`                  |
+| Algorithm            | Script                                                                 |
+| -------------------- | ---------------------------------------------------------------------- |
+| CAL                  | `active_learning/run_optimization_comparison.sh`                       |
+| DEFT-UCS             | `coreset_selection/deftucs/run_finetune_comparison.py`                 |
+| CRAIG                | `coreset_selection/craig/run_craig_benchmark.py`                       |
+| SemDeDup & FairDeDup | `semantic_dedup/experiments/run_cifar10_experiment.py`                 |
+| KNN-OOD              | `ood_detection/run_imagenet.py`, `ood_detection/run_cifar10_knnood.py` |
+| KNN Prompting        | `knn_prompting/run_comparison.sh`                                      |
+| SCIP                 | `code_pruning/run_inmemory_ablation_v2.py --mode all`                  |
 
 ### Exp 2: Ablation of IV1/IV2/IV3 (Table 4)
 
 Individual and combined effects of each invariant.
 
-| Algorithm | Script                                                                      |
-| --------- | --------------------------------------------------------------------------- |
-| CAL       | `active_learning/run_ablation.sh`                                           |
-| DEFT-UCS  | `coreset_selection/deftucs/run_ablation.py`                                 |
-| SemDeDup  | `semantic_dedup/scripts/run_ablation.sh`                                    |
-| SCIP      | `code_pruning/run_inmemory_ablation_v2.py --mode {baseline,ann,reuse,topk}` |
+| Algorithm            | Script                                                                      |
+| -------------------- | --------------------------------------------------------------------------- |
+| CAL                  | `active_learning/run_ablation.sh`                                           |
+| DEFT-UCS             | `coreset_selection/deftucs/run_ablation.py`                                 |
+| SemDeDup & FairDeDup | `semantic_dedup/scripts/run_ablation.sh`                                    |
+| SCIP                 | `code_pruning/run_inmemory_ablation_v2.py --mode {baseline,ann,reuse,topk}` |
 
 ### Exp 3: Component-Level Breakdown (Table 5)
 
@@ -69,27 +69,27 @@ Breakdown timing fields are included in E2E / ablation script outputs.
 
 Build vs query time and peak cache size.
 
-| Algorithm | Script                                                     |
-| --------- | ---------------------------------------------------------- |
-| CAL       | `active_learning/measure_cache_memory.py`                  |
-| CRAIG     | `coreset_selection/craig/measure_build_query_cache.py`     |
-| SemDeDup  | `semantic_dedup/measure_semdedup_memory.py`                |
-| KNN-OOD   | Build/query time logged in `ood_detection/run_imagenet.py` |
-| SCIP      | `code_pruning/measure_build_query_cache.py`                |
+| Algorithm            | Script                                                     |
+| -------------------- | ---------------------------------------------------------- |
+| CAL                  | `active_learning/measure_cache_memory.py`                  |
+| CRAIG                | `coreset_selection/craig/measure_build_query_cache.py`     |
+| SemDeDup & FairDeDup | `semantic_dedup/measure_semdedup_memory.py`                |
+| KNN-OOD              | Build/query time logged in `ood_detection/run_imagenet.py` |
+| SCIP                 | `code_pruning/measure_build_query_cache.py`                |
 
 ### Exp 5: Cross-Setup Evaluation (Table 7)
 
 In-memory, vector-database, and distributed setups.
 
-| Algorithm     | Milvus                                          | Spark                                 |
-| ------------- | ----------------------------------------------- | ------------------------------------- |
-| CAL           | `run_milvus_comparison.sh`                      | `benchmark_spark_knn.py`              |
-| DEFT-UCS      | `run_milvus_comparison.py`                      | —                                     |
-| CRAIG         | `run_craig_benchmark.py --backend milvus/spark` | same                                  |
-| SemDeDup      | `run_cifar10_milvus_experiment.py`              | `run_semdedup_spark.py`               |
-| KNN-OOD       | `run_milvus_benchmark.py`                       | `run_imagenet_spark_lsh_optimized.py` |
-| KNN Prompting | `run_milvus_comparison.sh`                      | `run_spark_comparison.sh`             |
-| SCIP          | `run_milvus_simple.py`                          | `run_spark_fixed.py`                  |
+| Algorithm            | Milvus                                          | Spark                                 |
+| -------------------- | ----------------------------------------------- | ------------------------------------- |
+| CAL                  | `run_milvus_comparison.sh`                      | `benchmark_spark_knn.py`              |
+| DEFT-UCS             | `run_milvus_comparison.py`                      | —                                     |
+| CRAIG                | `run_craig_benchmark.py --backend milvus/spark` | same                                  |
+| SemDeDup & FairDeDup | `run_cifar10_milvus_experiment.py`              | `run_semdedup_spark.py`               |
+| KNN-OOD              | `run_milvus_benchmark.py`                       | `run_imagenet_spark_lsh_optimized.py` |
+| KNN Prompting        | `run_milvus_comparison.sh`                      | `run_spark_comparison.sh`             |
+| SCIP                 | `run_milvus_simple.py`                          | `run_spark_fixed.py`                  |
 
 ### Exp 6: Memory Constraint (Figure 3)
 
@@ -106,13 +106,13 @@ Runtime under constrained memory budgets (CRAIG).
 
 Selection recall, task performance, and runtime ratio under varying dataset sizes.
 
-| Algorithm | Script                                                |
-| --------- | ----------------------------------------------------- |
-| CAL       | `active_learning/run_imdb_scaling.sh`                 |
-| DEFT-UCS  | `coreset_selection/deftucs/run_scaling_experiment.py` |
-| SemDeDup  | `semantic_dedup/run_scaling_experiment.py`            |
-| KNN-OOD   | `ood_detection/run_scaling.sh`                        |
-| SCIP      | `code_pruning/run_scip_scaling.py`                    |
+| Algorithm            | Script                                                |
+| -------------------- | ----------------------------------------------------- |
+| CAL                  | `active_learning/run_imdb_scaling.sh`                 |
+| DEFT-UCS             | `coreset_selection/deftucs/run_scaling_experiment.py` |
+| SemDeDup & FairDeDup | `semantic_dedup/run_scaling_experiment.py`            |
+| KNN-OOD              | `ood_detection/run_scaling.sh`                        |
+| SCIP                 | `code_pruning/run_scip_scaling.py`                    |
 
 ### Exp 8: Cache Capacity Sensitivity (Figure 4 bottom-right)
 
@@ -127,14 +127,14 @@ Runtime ratio under varying LRU cache sizes for 5 algorithms with IV2 (reuse).
 
 Selection recall, task performance, and search time under nlist/nprobe sweeps.
 
-| Algorithm | Script                                                    |
-| --------- | --------------------------------------------------------- |
-| CAL       | `active_learning/run_ann_hyperparam_cal.py`               |
-| CRAIG     | `coreset_selection/craig/run_ann_hyperparam_craig.py`     |
-| DEFT-UCS  | `coreset_selection/deftucs/run_ann_hyperparam_coreset.py` |
-| SemDeDup  | `semantic_dedup/run_ann_hyperparameter_study.py`          |
-| KNN-OOD   | `ood_detection/run_ann_hyperparam_ood.py`                 |
-| SCIP      | `code_pruning/run_ann_hyperparam_codepruning.py`          |
+| Algorithm            | Script                                                    |
+| -------------------- | --------------------------------------------------------- |
+| CAL                  | `active_learning/run_ann_hyperparam_cal.py`               |
+| CRAIG                | `coreset_selection/craig/run_ann_hyperparam_craig.py`     |
+| DEFT-UCS             | `coreset_selection/deftucs/run_ann_hyperparam_coreset.py` |
+| SemDeDup & FairDeDup | `semantic_dedup/run_ann_hyperparameter_study.py`          |
+| KNN-OOD              | `ood_detection/run_ann_hyperparam_ood.py`                 |
+| SCIP                 | `code_pruning/run_ann_hyperparam_codepruning.py`          |
 
 ### Plotting Scripts
 
@@ -157,7 +157,7 @@ ai-becomes-db/
 │   ├── craig/         # CRAIG: IV1 (ANN) + IV2 (Residual Reuse)
 │   └── deftucs/       # DEFT-UCS: IV1 + IV2 (Distance Reuse) + IV3 (Top-k)
 ├── active_learning/   # CAL: IV1 (ANN) + IV2 (Probability Reuse)
-├── semantic_dedup/    # SemDeDup: IV1 (ANN) + IV2 (Search Results Reuse)
+├── semantic_dedup/    # SemDeDup & FairDeDup: IV1 (ANN) + IV2 (Search Results Reuse)
 ├── ood_detection/     # KNN-OOD: IV1 (ANN with GPU)
 ├── knn_prompting/     # KNN Prompting: IV2 (Intermediate Results Reuse)
 ├── code_pruning/      # SCIP: IV1 + IV2 (Distance Reuse) + IV3 (Top-k)

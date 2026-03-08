@@ -30,8 +30,35 @@ bash get_data.sh
 ### Exp 1: End-to-End (Table 3)
 
 ```bash
-bash run_optimization_comparison.sh
-# Paper: SST-2 1472.87s → 283.21s (-80.77%), IMDB 53.75s → 42.48s (-20.97%)
+# Both SST-2 and IMDB, 3 runs each
+bash run_e2e_comparison.sh
+
+# SST-2 only
+bash run_e2e_comparison.sh --dataset sst-2
+
+# IMDB only
+bash run_e2e_comparison.sh --dataset imdb
+
+# Custom runs
+bash run_e2e_comparison.sh --dataset sst-2 --num_runs 5
+
+# Paper results:
+#   SST-2: 1472.87s → 283.21s (-80.77%), Accuracy 90.36%
+#   IMDB:  53.75s → 42.48s (-20.97%), Accuracy 96.89%
+```
+
+Or run individual experiments directly:
+
+```bash
+# Original
+python run_al.py --dataset_name sst-2 --acquisition cal \
+    --use_sklearn_ann False --cache_probabilities False \
+    --seed 42 --init_train_data 1% --acquisition_size 2% --budget 15%
+
+# IV-Aligned (IV1 + IV2)
+python run_al.py --dataset_name sst-2 --acquisition cal \
+    --use_sklearn_ann True --cache_probabilities True \
+    --seed 42 --init_train_data 1% --acquisition_size 2% --budget 15%
 ```
 
 ### Exp 2: Ablation (Table 4)
@@ -41,7 +68,15 @@ bash run_ablation.sh
 # Tests: Original / +IV1 / +IV2 / +All
 ```
 
+### Exp 3: Component Breakdown (Table 5)
+
+Component-level execution times (e.g., Training time, Test time, Inference time, Selection time, KNN Build, and KNN Search) are intrinsically logged and printed in the terminal at the end of each iteration during the standard `run_al.py` execution. No separate breakdown script is required.
+
 ### Exp 4: Overhead (Table 6)
+
+Similar to Exp 3, the exact separation of Overhead (Index Build vs. Search Query Time) is natively reported in the `run_al.py` summary logs.
+
+To measure peak cache memory overhead:
 
 ```bash
 python measure_cache_memory.py
@@ -52,7 +87,7 @@ python measure_cache_memory.py
 
 ```bash
 bash run_milvus_comparison.sh       # Milvus vector-database
-python benchmark_spark_knn.py       # Spark distributed
+bash run_spark_comparison.sh        # Spark distributed
 ```
 
 ### Exp 7: Dataset Size (Figure 4 top)
@@ -65,7 +100,6 @@ bash run_imdb_scaling.sh
 ### Exp 8: Cache Capacity (Figure 4 bottom-right)
 
 ```bash
-python run_cache_benchmark_multi.py --algorithms CAL
 python run_cache_benchmark_ratio.py
 # Multi-algorithm cache benchmark covering CAL, KNNPrompting, SCIP, CRAIG, SemDeDup
 ```
@@ -86,15 +120,15 @@ python show_acc.py --ablation
 
 ## Key Files
 
-| File                             | Description                                  |
-| -------------------------------- | -------------------------------------------- |
-| `run_al.py`                      | Main active learning experiment              |
-| `acquisition/cal.py`             | CAL with IV1 (ANN) + IV2 (probability reuse) |
-| `run_optimization_comparison.sh` | E2E comparison (Exp 1)                       |
-| `run_ablation.sh`                | Ablation study (Exp 2)                       |
-| `measure_cache_memory.py`        | Overhead measurement (Exp 4)                 |
-| `benchmark_spark_knn.py`         | Spark distributed (Exp 5)                    |
-| `run_milvus_comparison.sh`       | Milvus (Exp 5)                               |
-| `run_imdb_scaling.sh`            | Dataset size ratio (Exp 7)                   |
-| `run_cache_benchmark_multi.py`   | Cache capacity sweep (Exp 8)                 |
-| `run_ann_hyperparam_cal.py`      | ANN sweep (Exp 9)                            |
+| File                           | Description                                               |
+| ------------------------------ | --------------------------------------------------------- |
+| `run_al.py`                    | Main active learning experiment (all configs)             |
+| `acquisition/cal.py`           | CAL with IV1 (ANN) + IV2 (probability reuse)              |
+| `run_e2e_comparison.sh`        | Unified E2E: SST-2 + IMDB, original vs IV-aligned (Exp 1) |
+| `run_ablation.sh`              | Ablation study (Exp 2)                                    |
+| `measure_cache_memory.py`      | Overhead measurement (Exp 4)                              |
+| `run_spark_comparison.sh`      | Spark distributed (Exp 5)                                 |
+| `run_milvus_comparison.sh`     | Milvus (Exp 5)                                            |
+| `run_imdb_scaling.sh`          | Dataset size ratio (Exp 7)                                |
+| `run_cache_benchmark_ratio.py` | Cache capacity sweep — 5 algorithms (Exp 8)               |
+| `run_ann_hyperparam_cal.py`    | ANN sweep (Exp 9)                                         |

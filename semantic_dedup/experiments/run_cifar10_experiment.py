@@ -708,14 +708,14 @@ def run_deduplication():
     
     experiments = [
         # (name, algorithm, use_ann, use_cache)
-        ("SemDeDup_Exact_NoCache", "semdedup", False, False),
-        ("SemDeDup_Exact_Cache", "semdedup", False, True),
-        ("SemDeDup_ANN_NoCache", "semdedup", True, False),
-        ("SemDeDup_ANN_Cache", "semdedup", True, True),
-        ("FairDeDup_Exact_NoCache", "fairdedup", False, False),
-        ("FairDeDup_Exact_Cache", "fairdedup", False, True),
-        ("FairDeDup_ANN_NoCache", "fairdedup", True, False),
-        ("FairDeDup_ANN_Cache", "fairdedup", True, True),
+        ("SemDeDup_Original", "semdedup", False, False),
+        ("SemDeDup_+IV2", "semdedup", False, True),
+        ("SemDeDup_+IV1", "semdedup", True, False),
+        ("SemDeDup_+All", "semdedup", True, True),
+        ("FairDeDup_Original", "fairdedup", False, False),
+        ("FairDeDup_+IV2", "fairdedup", False, True),
+        ("FairDeDup_+IV1", "fairdedup", True, False),
+        ("FairDeDup_+All", "fairdedup", True, True),
     ]
     
     for name, algo, use_ann, use_cache in experiments:

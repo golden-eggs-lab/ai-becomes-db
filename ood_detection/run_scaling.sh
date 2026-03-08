@@ -1,7 +1,7 @@
 #!/bin/bash
 # KNN-OOD ImageNet-1K: Dataset Size Scaling Experiment
 # Vary training data subsample ratio: 0.7, 0.5, 0.3
-# Baseline (Exact KNN GPU) × 1 run, Optimized (ANN-IVF GPU) × 2 runs per ratio
+# Baseline (Original Exact KNN GPU) × 1 run, Optimized (+All/IV-Aligned ANN-IVF GPU) × 2 runs per ratio
 # Ratio=1.0 available from existing knn_ood_benchmark_3runs.log
 # Env: ood
 
@@ -36,24 +36,24 @@ for ratio in ${RATIOS}; do
     echo ""
     echo "===== ratio=${ratio} ====="
 
-    # Baseline: Exact KNN GPU × 1
-    echo "  [Baseline] Running..."
+    # Original: Exact KNN GPU × 1
+    echo "  [Original] Running..."
     python -u run_imagenet.py \
         "${BASE_ARGS[@]}" \
         --subsample-ratio ${ratio} \
         > "${LOG_DIR}/baseline_ratio${ratio}.log" 2>&1
-    echo "  [Baseline] Done."
+    echo "  [Original] Done."
 
-    # Optimized: ANN-IVF GPU × 2
+    # +All (IV-Aligned): ANN-IVF GPU × 2
     for run in 1 2; do
-        echo "  [Optimized run${run}] Running..."
+        echo "  [+All run${run}] Running..."
         python -u run_imagenet.py \
             "${BASE_ARGS[@]}" \
             --use-ann --ann-method ivf \
             --nlist 1000 --nprobe 5 \
             --subsample-ratio ${ratio} \
             > "${LOG_DIR}/optimized_ratio${ratio}_run${run}.log" 2>&1
-        echo "  [Optimized run${run}] Done."
+        echo "  [+All run${run}] Done."
     done
 done
 
@@ -74,7 +74,7 @@ results = {}
 for ratio in [0.7, 0.5, 0.3]:
     d = {'ratio': ratio}
     
-    # Baseline
+    # Original
     f = log_dir / f"baseline_ratio{ratio}.log"
     if f.exists():
         text = f.read_text()
@@ -83,7 +83,7 @@ for ratio in [0.7, 0.5, 0.3]:
         m = re.search(r'AUROC.*?:\s*([\d.]+)', text)
         if m: d['baseline_auroc'] = float(m.group(1))
     
-    # Optimized
+    # +All (IV-Aligned)
     opt_times, opt_aurocs = [], []
     for run in [1, 2]:
         f = log_dir / f"optimized_ratio{ratio}_run{run}.log"
@@ -106,5 +106,5 @@ print("\nKNN-OOD Scaling Results:")
 for r, d in sorted(results.items(), key=lambda x: -float(x[0])):
     if 'baseline_time' in d and d.get('optimized_times'):
         opt_mean = np.mean(d['optimized_times'])
-        print(f"  ratio={r}: baseline={d['baseline_time']:.1f}s, opt={opt_mean:.1f}s, speedup={d['baseline_time']/opt_mean:.2f}x")
+        print(f"  ratio={r}: original={d['baseline_time']:.1f}s, +all={opt_mean:.1f}s, speedup={d['baseline_time']/opt_mean:.2f}x")
 PYEOF
