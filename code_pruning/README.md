@@ -32,21 +32,38 @@ ds = load_dataset("bigcode/the-stack", data_dir="data/python")
 pip install -r requirements.txt
 ```
 
+### Data Preparation & Embeddings
+
+The Python benchmark scripts (like `run_inmemory_ablation_v2.py`) assume you have pre-computed the code vectors and saved them to `./experiments/aligned/embeddings.npy`. If you do not have these, you must generate them by running the embedding utility functions in `embeddings.py` on the `CodeSearchNet-Python` dataset.
+
+_(Note: The Java End-to-End script, `run_java_experiment.py`, automatically handles downloading the dataset and generating the embeddings on the fly if they are missing)._
+
 ### Exp 1: End-to-End (Table 3)
 
+The default scripts run on the **CodeSearchNet-Python** dataset using pre-computed embeddings:
+
 ```bash
-python run_inmemory_ablation_v2.py --mode all --n_clusters 1000 --n_runs 5
-# Paper: Python 50.05s → 23.57s (-52.91%), Java 63.54s → 29.83s (-53.05%)
+bash run_e2e_ablation.sh
+# Paper: Python 50.05s → 23.57s (-52.91%)
+```
+
+To reproduce the full end-to-end pipeline (downloading texts, embedding generation, SCIP, and downstream CodeBERT evaluation) on **CodeSearchNet-Java**:
+
+```bash
+python run_java_experiment.py --max_samples 0 --n_gpus 8
+# Paper: Java 63.54s → 29.83s (-53.05%)
 ```
 
 ### Exp 2: Ablation (Table 4)
 
 ```bash
-python run_inmemory_ablation_v2.py --mode baseline --n_clusters 1000 --n_runs 5
-python run_inmemory_ablation_v2.py --mode ann --n_clusters 1000 --n_runs 5
-python run_inmemory_ablation_v2.py --mode reuse --n_clusters 1000 --n_runs 5
-python run_inmemory_ablation_v2.py --mode topk --n_clusters 1000 --n_runs 5
+bash run_e2e_ablation.sh
+# Tests: baseline, ann, reuse, and topk optimizations
 ```
+
+### Exp 3: Component-Level Breakdown (Table 5)
+
+Component-level breakdown timings (e.g., KMeans, CentroidSearch, Distances, Top-K) are natively reported in the console output during the execution of the ablation script (`run_e2e_ablation.sh`).
 
 ### Exp 4: Overhead (Table 6)
 
@@ -76,7 +93,7 @@ SCIP is covered by the multi-algorithm cache benchmark:
 
 ```bash
 # Run from active_learning/ directory
-python run_cache_benchmark_multi.py --algorithms SCIP
+python run_cache_benchmark_ratio.py --algorithms SCIP
 ```
 
 ### Exp 9: ANN Sweep (Figure 5)
@@ -88,14 +105,15 @@ python run_ann_hyperparam_codepruning.py
 
 ## Key Files
 
-| File                                | Description                  |
-| ----------------------------------- | ---------------------------- |
-| `main.py`                           | Core SCIP algorithm          |
-| `run_inmemory_ablation_v2.py`       | E2E + ablation (Exp 1, 2)    |
-| `measure_build_query_cache.py`      | Overhead measurement (Exp 4) |
-| `run_milvus_simple.py`              | Milvus (Exp 5)               |
-| `run_spark_fixed.py`                | Spark (Exp 5)                |
-| `run_scip_scaling.py`               | Dataset size ratio (Exp 7)   |
-| `run_ann_hyperparam_codepruning.py` | ANN sweep (Exp 9)            |
-| `embeddings.py`                     | Code embedding generation    |
-| `data_loading.py`                   | Dataset loading              |
+| File                                | Description                               |
+| ----------------------------------- | ----------------------------------------- |
+| `run_e2e_ablation.sh`               | E2E + ablation (Exp 1, 2) on Python       |
+| `run_java_experiment.py`            | Full E2E pipeline (Exp 1) on Java dataset |
+| `run_inmemory_ablation_v2.py`       | Ablation internal Python backend          |
+| `measure_build_query_cache.py`      | Overhead measurement (Exp 4)              |
+| `run_milvus_simple.py`              | Milvus (Exp 5)                            |
+| `run_spark_fixed.py`                | Spark (Exp 5)                             |
+| `run_scip_scaling.py`               | Dataset size ratio (Exp 7)                |
+| `run_ann_hyperparam_codepruning.py` | ANN sweep (Exp 9)                         |
+| `embeddings.py`                     | Code embedding generation                 |
+| `data_loading.py`                   | Dataset loading                           |

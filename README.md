@@ -48,18 +48,18 @@ Compares original vs IV-aligned runtime and task performance.
 | SemDeDup & FairDeDup | `semantic_dedup/experiments/run_cifar10_experiment.py`                 |
 | KNN-OOD              | `ood_detection/run_imagenet.py`, `ood_detection/run_cifar10_knnood.py` |
 | KNN Prompting        | `knn_prompting/run_comparison.sh`                                      |
-| SCIP                 | `code_pruning/run_inmemory_ablation_v2.py --mode all`                  |
+| SCIP                 | `code_pruning/run_e2e_ablation.sh`                                     |
 
 ### Exp 2: Ablation of IV1/IV2/IV3 (Table 4)
 
 Individual and combined effects of each invariant.
 
-| Algorithm            | Script                                                                      |
-| -------------------- | --------------------------------------------------------------------------- |
-| CAL                  | `active_learning/run_ablation.sh`                                           |
-| DEFT-UCS             | `coreset_selection/deftucs/run_ablation.py`                                 |
-| SemDeDup & FairDeDup | `semantic_dedup/scripts/run_ablation.sh`                                    |
-| SCIP                 | `code_pruning/run_inmemory_ablation_v2.py --mode {baseline,ann,reuse,topk}` |
+| Algorithm            | Script                                      |
+| -------------------- | ------------------------------------------- |
+| CAL                  | `active_learning/run_ablation.sh`           |
+| DEFT-UCS             | `coreset_selection/deftucs/run_ablation.py` |
+| SemDeDup & FairDeDup | `semantic_dedup/scripts/run_ablation.sh`    |
+| SCIP                 | `code_pruning/run_e2e_ablation.sh`          |
 
 ### Exp 3: Component-Level Breakdown (Table 5)
 
