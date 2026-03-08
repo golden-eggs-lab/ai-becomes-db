@@ -18,7 +18,7 @@ from tensorflow.keras.regularizers import l2
 
 import numpy as np
 import time
-import util
+import util_nearpy as util
 import matplotlib.pyplot as plt
 import pandas as pd
 import argparse

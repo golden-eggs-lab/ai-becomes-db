@@ -28,7 +28,7 @@ import time
 import json
 import argparse
 from datetime import datetime
-import util
+import util_nearpy as util
 
 # Parse arguments
 parser = argparse.ArgumentParser(description='CRAIG Multi-Backend Benchmark')

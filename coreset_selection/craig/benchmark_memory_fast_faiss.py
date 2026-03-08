@@ -32,7 +32,7 @@ from tensorflow.keras.layers import Dense, Activation
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.regularizers import l2
 
-import util_v2 as util
+import util_faiss as util
 
 # Training config
 EPOCHS = 1  # Only 1 epoch needed to measure greedy selection time

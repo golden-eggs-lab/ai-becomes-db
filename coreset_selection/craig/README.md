@@ -50,9 +50,9 @@ python run_craig_benchmark.py --backend spark --mode both --n_runs 3
 ### Exp 6: Memory Constraint (Figure 3)
 
 ```bash
-python run_memory_experiment_1class.py        # Per-class runtime under memory limits
-python run_faiss_memory_experiment.py          # FAISS-based ANN variant
-python run_memory_experiment_v2.py             # Extended memory sweep
+python benchmark_memory_full.py                   # Full MNIST (10 classes), compares NearPy/Milvus/Spark
+python benchmark_memory_fast_nearpy_spark.py      # Fast tracking (class 0 only), compares NearPy/Milvus/Spark
+python benchmark_memory_fast_faiss.py             # Fast tracking (class 0 only), exclusively for FAISS
 ```
 
 ### Exp 8: Cache Capacity (Figure 4 bottom-right)
@@ -61,7 +61,7 @@ CRAIG is covered by the multi-algorithm cache benchmark:
 
 ```bash
 # Run from active_learning/ directory
-python run_cache_benchmark_multi.py --algorithms CRAIG
+python run_cache_benchmark_ratio.py --algorithms CRAIG
 ```
 
 ### Exp 9: ANN Sweep (Figure 5)
@@ -73,11 +73,15 @@ python run_ann_hyperparam_craig.py
 
 ## Key Files
 
-| File                           | Description                                                 |
-| ------------------------------ | ----------------------------------------------------------- |
-| `lazy_greedy.py`               | Core greedy selection with IV1 (ANN) + IV2 (residual reuse) |
-| `run_craig_benchmark.py`       | E2E benchmark (Exp 1, 5)                                    |
-| `compare_fashion_mnist_ann.py` | Original vs IV-aligned comparison                           |
-| `measure_build_query_cache.py` | Overhead measurement (Exp 4)                                |
-| `run_memory_experiment*.py`    | Memory constraint (Exp 6)                                   |
-| `run_ann_hyperparam_craig.py`  | ANN sweep (Exp 9)                                           |
+| File                           | Description                                                         |
+| ------------------------------ | ------------------------------------------------------------------- | --- |
+| `lazy_greedy_nearpy.py`        | Core greedy selection using NearPy LSH (IV1) + residual reuse (IV2) |
+| `lazy_greedy_faiss.py`         | Core greedy selection using FAISS IVF (IV1) + residual reuse (IV2)  |
+| `util_nearpy.py`               | Main integration helpers (loads NearPy implementation)              |
+| `util_faiss.py`                | Main integration helpers (loads FAISS implementation)               |
+| `run_craig_benchmark.py`       | E2E benchmark (Exp 1, 5)                                            |
+| `compare_fashion_mnist_ann.py` | Original vs IV-aligned comparison                                   |
+| `measure_build_query_cache.py` | Overhead measurement (Exp 4)                                        |
+| `benchmark_memory_full.py`     | Memory constraint on full MNIST (Exp 6)                             |
+| `benchmark_memory_fast_*.py`   | Fast memory constraint sweep using only class 0 (Exp 6)             |     |
+| `run_ann_hyperparam_craig.py`  | ANN sweep (Exp 9)                                                   |

@@ -22,7 +22,7 @@ from tensorflow.keras.layers import Dense, Activation
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.regularizers import l2
 
-import util
+import util_nearpy as util
 
 EPOCHS = 1
 SUBSET_SIZE = 0.4

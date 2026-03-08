@@ -10,7 +10,7 @@ from warnings import simplefilter
 simplefilter(action='ignore', category=FutureWarning)
 np.seterr(all='ignore')
 
-import util
+import util_nearpy as util
 import random
 
 

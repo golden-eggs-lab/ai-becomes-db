@@ -10,7 +10,7 @@ from nearpy.filters import NearestFilter
 from nearpy.hashes import RandomBinaryProjections
 import matplotlib.pyplot as plt
 import numpy as np
-from lazy_greedy import FacilityLocation, lazy_greedy_heap, FacilityLocationANN, lazy_greedy_heap_ann, lazy_greedy_heap_ann_batch
+from lazy_greedy_nearpy import FacilityLocation, lazy_greedy_heap, FacilityLocationANN, lazy_greedy_heap_ann, lazy_greedy_heap_ann_batch
 import scipy.spatial
 # from eucl_dist.cpu_dist import dist
 # from eucl_dist.gpu_dist import dist as gdist
@@ -20,7 +20,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 from itertools import repeat
 from sklearn.metrics import pairwise_distances as sklearn_pairwise_distances
 
-# from lazy_greedy import FacilityLocation, lazy_greedy, lazy_greedy_heap
+# from lazy_greedy_nearpy import FacilityLocation, lazy_greedy, lazy_greedy_heap
 # from set_cover import SetCover
 
 # TensorFlow 1.x imports - deprecated in TF 2.x

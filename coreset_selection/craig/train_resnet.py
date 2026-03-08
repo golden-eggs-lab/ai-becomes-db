@@ -14,7 +14,7 @@ import torchvision.datasets as datasets
 import resnet
 
 from torch.utils.data import Dataset, DataLoader
-import util
+import util_nearpy as util
 from warnings import simplefilter
 from GradualWarmupScheduler import *
 

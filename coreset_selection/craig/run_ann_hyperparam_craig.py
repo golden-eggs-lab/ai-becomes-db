@@ -65,7 +65,7 @@ def prepare_data():
 
 def run_exact(gradients, Y_train_nocat, B):
     """Run exact baseline through end-to-end pipeline."""
-    import util_v2 as util
+    import util_faiss as util
     subset, _, _, _, ordering_time, similarity_time = util.get_orders_and_weights(
         B, gradients, 'euclidean', smtk=0, no=0, y=Y_train_nocat,
         stoch_greedy=0, equal_num=True,
@@ -77,8 +77,8 @@ def run_exact(gradients, Y_train_nocat, B):
 
 def run_ann(gradients, Y_train_nocat, B, nlist, nprobe):
     """Run ANN through end-to-end pipeline with custom nlist/nprobe."""
-    import util_v2 as util
-    import lazy_greedy_v2
+    import util_faiss as util
+    import lazy_greedy_faiss
     import faiss
 
     # Monkey-patch to use custom nlist/nprobe

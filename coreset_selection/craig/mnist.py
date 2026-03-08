@@ -11,7 +11,7 @@ from tensorflow.keras.optimizers import SGD
 
 import numpy as np
 import time
-import util
+import util_nearpy as util
 import argparse
 
 # Parse command line arguments

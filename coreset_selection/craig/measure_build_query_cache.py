@@ -11,7 +11,7 @@ import tracemalloc
 import numpy as np
 from sklearn.metrics import pairwise_distances as sklearn_pairwise_distances
 
-from lazy_greedy import FacilityLocation, lazy_greedy_heap, FacilityLocationANN, lazy_greedy_heap_ann
+from lazy_greedy_nearpy import FacilityLocation, lazy_greedy_heap, FacilityLocationANN, lazy_greedy_heap_ann
 
 # Config
 N_RUNS = 3

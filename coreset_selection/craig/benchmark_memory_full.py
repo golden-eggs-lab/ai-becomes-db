@@ -1,15 +1,18 @@
 #!/usr/bin/env python
 """
-FAISS Memory Constraint Experiment
+Craig Memory Constraint Experiment
 
-Compare FAISS-based baseline (exact) vs optimized (ANN/IVF) under memory pressure.
-This demonstrates that FAISS has lower memory overhead than NearPy (hash-based ANN).
+Compare In-Memory and Milvus setups.
+Memory limiting should be done externally via:
+  - Docker: docker run --memory=512m ...
+  - cgroups: cgexec -g memory:limited ...
+  - systemd-run: systemd-run --scope -p MemoryMax=512M ...
 
-Memory limiting should be done externally via Docker: --memory=200m
+This script runs experiments and records timing.
 
 Usage:
-  python run_faiss_memory_experiment.py --setup faiss_baseline --memory-tag 200m
-  python run_faiss_memory_experiment.py --setup faiss_optimized --memory-tag 200m
+  python run_memory_experiment.py                    # Compare all 4 setups
+  python run_memory_experiment.py --setup in_memory_baseline  # Single setup
 """
 import os
 import sys
@@ -28,63 +31,52 @@ from tensorflow.keras.layers import Dense, Activation
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.regularizers import l2
 
+import util_nearpy as util
+
 # Training config
 EPOCHS = 1  # Only 1 epoch needed to measure greedy selection time
 SUBSET_SIZE = 0.4
 ANN_K = 20
 
-# FAISS setups
-# baseline: exact search (FLAT index, no approximation)
-# optimized: ANN search (IVF index with approximate search)
 SETUPS = {
-    'faiss_baseline': {'use_ann': False},    # Exact search via FAISS FLAT
-    'faiss_optimized': {'use_ann': True},    # ANN via FAISS IVF
+    'in_memory_baseline': {'backend': 'nearpy', 'use_ann': False, 'force_backend': False},
+    'in_memory_optimized': {'backend': 'nearpy', 'use_ann': True, 'force_backend': True},
+    'milvus_baseline': {'backend': 'milvus', 'use_ann': False, 'force_backend': True},
+    'milvus_optimized': {'backend': 'milvus', 'use_ann': True, 'force_backend': True},
+    'spark_baseline': {'backend': 'spark', 'use_ann': False, 'force_backend': True},
+    'spark_optimized': {'backend': 'spark', 'use_ann': True, 'force_backend': True},
 }
 
 
 def run_experiment(setup_name: str, setup_config: dict) -> dict:
     """Run a single experiment configuration."""
+    backend = setup_config['backend']
     use_ann = setup_config['use_ann']
+    force_backend = setup_config['force_backend']
     
     print(f"\n{'='*60}")
     print(f"Running: {setup_name}")
-    print(f"  use_ann={use_ann} (FAISS backend)")
+    print(f"  backend={backend}, use_ann={use_ann}, force={force_backend}")
     print(f"{'='*60}")
     
-    # Import util_v2 which uses lazy_greedy_v2 (FAISS-based)
-    import util_v2 as util
+    # Prepare data - Use ALL 10 classes (full MNIST) to match original experiment
+    (X_train, Y_train_raw), (X_test, Y_test_raw) = mnist.load_data()
     
-    # Prepare data
-    (X_train_full, Y_train_full), (X_test_full, Y_test_full) = mnist.load_data()
-    
-    # **MEMORY EXPERIMENT OPTIMIZATION**: Only use class 0 to speed up tests
-    # This reduces test time from ~7 hours to ~40 min per experiment while
-    # still showing memory pressure trends across different memory limits
-    print("Filtering to class 0 only for faster testing...")
-    class_0_train_mask = (Y_train_full == 0)
-    class_0_test_mask = (Y_test_full == 0)
-    
-    X_train = X_train_full[class_0_train_mask]
-    Y_train_single = Y_train_full[class_0_train_mask]
-    X_test = X_test_full[class_0_test_mask]
-    Y_test_single = Y_test_full[class_0_test_mask]
-    
-    print(f"  Original: {len(X_train_full)} train, {len(X_test_full)} test")
-    print(f"  Class 0:  {len(X_train)} train, {len(X_test)} test")
+    print(f"Using full MNIST: {len(X_train)} train, {len(X_test)} test (10 classes)")
     
     X_train = X_train.reshape(-1, 784).astype('float32') / 255
     X_test = X_test.reshape(-1, 784).astype('float32') / 255
     
-    # Binary classification for class 0 vs rest (but we only have class 0)
-    Y_train = to_categorical(Y_train_single, 2)
-    Y_test = to_categorical(Y_test_single, 2)
-    Y_train_nocat = Y_train_single
+    # 10-class classification
+    Y_train = to_categorical(Y_train_raw, 10)
+    Y_test = to_categorical(Y_test_raw, 10)
+    Y_train_nocat = Y_train_raw
     
-    # Build binary classifier (class 0 only)
+    # Build 10-class classifier for full MNIST
     model = Sequential([
         Dense(128, activation='relu', input_shape=(784,), kernel_regularizer=l2(0.0001)),
         Activation('relu'),
-        Dense(2, activation='softmax')  # Binary: class 0 vs rest (though we only have 0)
+        Dense(10, activation='softmax')  # 10 classes for full MNIST
     ])
     model.compile(loss='categorical_crossentropy', metrics=['accuracy'], optimizer='sgd')
     
@@ -99,12 +91,11 @@ def run_experiment(setup_name: str, setup_config: dict) -> dict:
         B = int(SUBSET_SIZE * len(X_train))
         greedy_start = time.time()
         
-        # Force FAISS backend
-        subset, subset_weight, _, _, ordering_time, similarity_time = util.get_orders_and_weights(
+        subset, subset_weight, _, _, ordering_time, similarity_time, weight_time = util.get_orders_and_weights(
             B, preds, 'euclidean', smtk=0, no=0, y=Y_train_nocat,
             stoch_greedy=0, equal_num=True,
-            use_ann=use_ann, ann_k=ANN_K, ann_backend='faiss',
-            force_backend=True
+            use_ann=use_ann, ann_k=ANN_K, ann_backend=backend,
+            force_backend=force_backend
         )
         
         greedy_time = time.time() - greedy_start
@@ -133,22 +124,20 @@ def run_experiment(setup_name: str, setup_config: dict) -> dict:
 
 
 def main():
-    parser = argparse.ArgumentParser(description='FAISS Memory Experiment')
+    parser = argparse.ArgumentParser(description='Craig Memory Experiment')
     parser.add_argument('--setup', type=str, default=None, 
                         choices=list(SETUPS.keys()),
                         help='Run specific setup only')
     parser.add_argument('--output', type=str, default=None, help='Output JSON file')
     parser.add_argument('--memory-tag', type=str, default='unlimited',
                         help='Tag for memory constraint (for record keeping)')
-    parser.add_argument('--no-ann', action='store_true',
-                        help='Force exact search (override setup config)')
     args = parser.parse_args()
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_file = args.output or f"results/memory_exp_faiss_{args.memory_tag}_{timestamp}.json"
+    output_file = args.output or f"results/memory_exp_{args.memory_tag}_{timestamp}.json"
     
     print("="*70)
-    print("FAISS Memory Constraint Experiment")
+    print("Craig Memory Constraint Experiment")
     print("="*70)
     print(f"Memory tag: {args.memory_tag}")
     print(f"Output: {output_file}")
@@ -156,10 +145,7 @@ def main():
     
     # Select setups to run
     if args.setup:
-        setups_to_run = {args.setup: SETUPS[args.setup].copy()}
-        # Override with --no-ann if specified
-        if args.no_ann:
-            setups_to_run[args.setup]['use_ann'] = False
+        setups_to_run = {args.setup: SETUPS[args.setup]}
     else:
         setups_to_run = SETUPS
     
@@ -172,8 +158,6 @@ def main():
             results.append(result)
         except Exception as e:
             print(f"  ❌ Error: {e}")
-            import traceback
-            traceback.print_exc()
             results.append({
                 'setup': setup_name,
                 'memory_tag': args.memory_tag,
