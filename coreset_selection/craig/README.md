@@ -74,7 +74,7 @@ python run_ann_hyperparam_craig.py
 ## Key Files
 
 | File                           | Description                                                         |
-| ------------------------------ | ------------------------------------------------------------------- | --- |
+| ------------------------------ | ------------------------------------------------------------------- |
 | `lazy_greedy_nearpy.py`        | Core greedy selection using NearPy LSH (IV1) + residual reuse (IV2) |
 | `lazy_greedy_faiss.py`         | Core greedy selection using FAISS IVF (IV1) + residual reuse (IV2)  |
 | `util_nearpy.py`               | Main integration helpers (loads NearPy implementation)              |
@@ -83,5 +83,5 @@ python run_ann_hyperparam_craig.py
 | `compare_fashion_mnist_ann.py` | Original vs IV-aligned comparison                                   |
 | `measure_build_query_cache.py` | Overhead measurement (Exp 4)                                        |
 | `benchmark_memory_full.py`     | Memory constraint on full MNIST (Exp 6)                             |
-| `benchmark_memory_fast_*.py`   | Fast memory constraint sweep using only class 0 (Exp 6)             |     |
+| `benchmark_memory_fast_*.py`   | Fast memory constraint sweep using only class 0 (Exp 6)             |
 | `run_ann_hyperparam_craig.py`  | ANN sweep (Exp 9)                                                   |
