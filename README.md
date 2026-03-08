@@ -42,7 +42,7 @@ Compares original vs IV-aligned runtime and task performance.
 
 | Algorithm            | Script                                                                 |
 | -------------------- | ---------------------------------------------------------------------- |
-| CAL                  | `active_learning/run_optimization_comparison.sh`                       |
+| CAL                  | `active_learning/run_e2e_comparison.sh`                                |
 | DEFT-UCS             | `coreset_selection/deftucs/run_finetune_comparison.py`                 |
 | CRAIG                | `coreset_selection/craig/run_craig_benchmark.py`                       |
 | SemDeDup & FairDeDup | `semantic_dedup/experiments/run_cifar10_experiment.py`                 |
@@ -69,13 +69,13 @@ Breakdown timing fields are included in E2E / ablation script outputs.
 
 Build vs query time and peak cache size.
 
-| Algorithm            | Script                                                     |
-| -------------------- | ---------------------------------------------------------- |
-| CAL                  | `active_learning/measure_cache_memory.py`                  |
-| CRAIG                | `coreset_selection/craig/measure_build_query_cache.py`     |
-| SemDeDup & FairDeDup | `semantic_dedup/measure_semdedup_memory.py`                |
-| KNN-OOD              | Build/query time logged in `ood_detection/run_imagenet.py` |
-| SCIP                 | `code_pruning/measure_build_query_cache.py`                |
+| Algorithm            | Script                                                                           |
+| -------------------- | -------------------------------------------------------------------------------- |
+| CAL                  | Natively in `active_learning/run_al.py` logs; cache in `measure_cache_memory.py` |
+| CRAIG                | `coreset_selection/craig/measure_build_query_cache.py`                           |
+| SemDeDup & FairDeDup | `semantic_dedup/measure_semdedup_memory.py`                                      |
+| KNN-OOD              | Build/query time logged in `ood_detection/run_imagenet.py`                       |
+| SCIP                 | `code_pruning/measure_build_query_cache.py`                                      |
 
 ### Exp 5: Cross-Setup Evaluation (Table 7)
 
@@ -83,7 +83,7 @@ In-memory, vector-database, and distributed setups.
 
 | Algorithm            | Milvus                                          | Spark                                 |
 | -------------------- | ----------------------------------------------- | ------------------------------------- |
-| CAL                  | `run_milvus_comparison.sh`                      | `benchmark_spark_knn.py`              |
+| CAL                  | `run_milvus_comparison.sh`                      | `run_spark_comparison.sh`             |
 | DEFT-UCS             | `run_milvus_comparison.py`                      | —                                     |
 | CRAIG                | `run_craig_benchmark.py --backend milvus/spark` | same                                  |
 | SemDeDup & FairDeDup | `run_cifar10_milvus_experiment.py`              | `run_semdedup_spark.py`               |
@@ -120,8 +120,7 @@ Runtime ratio under varying LRU cache sizes for 5 algorithms with IV2 (reuse).
 
 | Script                                         | Description                                     |
 | ---------------------------------------------- | ----------------------------------------------- |
-| `active_learning/run_cache_benchmark_multi.py` | Covers CAL, KNNPrompting, SCIP, CRAIG, SemDeDup |
-| `active_learning/run_cache_benchmark_ratio.py` | Ratio-based cache sweep                         |
+| `active_learning/run_cache_benchmark_ratio.py` | Ratio-based cache sweep (covers ALL algorithms) |
 
 ### Exp 9: ANN Hyper-Parameter Sweep (Figure 5)
 
