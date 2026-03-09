@@ -87,18 +87,20 @@ def main():
         results[name] = timing
     
     # Summary table
-    print("\n" + "="*80)
-    print("ABLATION SUMMARY")
-    print("="*80)
-    print(f"{'Config':<20} {'KMeans(s)':<12} {'Select(s)':<12} {'Total(s)':<12} {'Speedup':<12} {'Recall':<12}")
-    print("-" * 80)
+    print("\n" + "="*95)
+    print("DEFT-UCS COMMAND/PHASE TIMING BREAKDOWN (s)")
+    print("="*95)
+    print(f"{'Config':<18} {'KMeans(s)':<12} {'Dist(s)':<12} {'Sort(s)':<12} {'Select(s)':<12} {'Total(s)':<12} {'Speedup':<10}")
+    print("-" * 95)
     
     baseline_time = results["Baseline"]["total"]
     
     for name, r in results.items():
         speedup = baseline_time / r["total"]
         recall_str = f"{r.get('recall', 1.0)*100:.1f}%"
-        print(f"{name:<20} {r['kmeans']:<12.2f} {r['selection']:<12.2f} {r['total']:<12.2f} {speedup:<12.2f}x {recall_str:<12}")
+        dist_t = r.get("distance_comp", 0.0)
+        sort_t = r.get("sorting", 0.0)
+        print(f"{name:<18} {r['kmeans']:<12.2f} {dist_t:<12.2f} {sort_t:<12.2f} {r['selection']:<12.2f} {r['total']:<12.2f} {speedup:<8.2f}x")
     
     # Save results
     output_dir = ARTIFACTS_DIR / "ablation"

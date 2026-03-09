@@ -162,7 +162,7 @@ def optimized_selection(vectors: np.ndarray, K: int, A: int, seed: int = 42,
     if verbose:
         print(f"Optimized Selection: N={N}, K={K}, A={A}")
     
-    timing = {"kmeans": 0, "selection": 0}
+    timing = {"kmeans": 0, "selection": 0, "distance_comp": 0, "sorting": 0}
     
     # ============ Phase 1: ANN KMeans with FAISS IVF ============
     start_time = time.time()
@@ -267,6 +267,7 @@ def optimized_selection(vectors: np.ndarray, K: int, A: int, seed: int = 42,
         if len(cluster_indices) == 0:
             continue
         
+        t0_dist = time.time()
         if is_reuse_l2:
             # Reuse L2 distances to compute cosine (no recomputation!)
             l2_dist_sq = l2_all[cluster_indices]
@@ -287,11 +288,14 @@ def optimized_selection(vectors: np.ndarray, K: int, A: int, seed: int = 42,
             cluster_vectors = vectors[cluster_indices]
             centroid = centroids[cluster_id].reshape(1, -1)
             cosine_dists = cosine_distances(cluster_vectors, centroid).reshape(-1)
+            
+        timing["distance_comp"] += time.time() - t0_dist
         
         # Select easy (closest) and hard (farthest) samples
         num_easy = min(int(0.5 * A), len(cosine_dists))
         num_hard = min(int(0.5 * A), len(cosine_dists) - num_easy)
         
+        t0_sort = time.time()
         if num_easy + num_hard > 0:
             if is_topk:
                 # IV3 Optimization: Top-k selection via argpartition instead of full argsort
@@ -316,6 +320,8 @@ def optimized_selection(vectors: np.ndarray, K: int, A: int, seed: int = 42,
                 selected = list(sorted_indices[:num_easy]) + list(sorted_indices[-num_hard:])
                 
             Dc_indices.extend(cluster_indices[selected])
+        
+        timing["sorting"] += time.time() - t0_sort
     
     timing["selection"] = time.time() - start_time
     timing["total"] = timing["kmeans"] + timing["selection"]
