@@ -35,13 +35,13 @@ pip install torch transformers tqdm
 # Original
 python knn_prompting.py \
   --llm_dir /path/to/gpt2-xl --data_dir ./data --dataset sst2 \
-  --seed 13 --n_train_shot 32 --n_demo_shot 4 --knn 3 \
+  --seed 1 --n_train_shot 32 --n_demo_shot 4 --knn 3 \
   --optimization baseline --output_dir ./output
 
 # IV-Aligned (IV2: pre-computed log reuse)
 python knn_prompting.py \
   --llm_dir /path/to/gpt2-xl --data_dir ./data --dataset sst2 \
-  --seed 13 --n_train_shot 32 --n_demo_shot 4 --knn 3 \
+  --seed 1 --n_train_shot 32 --n_demo_shot 4 --knn 3 \
   --optimization opt_v2 --output_dir ./output
 
 # Paper: SST-2 111.03s → 70.74s (-36.29%), AGNews 144.75s → 71.01s (-50.94%)
