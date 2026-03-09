@@ -13,18 +13,33 @@
 
 ## Datasets
 
-| Dataset | Samples | Dim | Metric   | Acquisition        |
-| ------- | ------- | --- | -------- | ------------------ |
-| SST-2   | 67,349  | 768 | Accuracy | `bash get_data.sh` |
-| IMDB    | 25,000  | 768 | Accuracy | `bash get_data.sh` |
+| Dataset | Samples | Dim | Metric   | Acquisition                                   |
+| ------- | ------- | --- | -------- | --------------------------------------------- |
+| SST-2   | 67,349  | 768 | Accuracy | `bash get_data.sh`                            |
+| IMDB    | 25,000  | 768 | Accuracy | Download `cal_data_and_model.zip` (see Setup) |
 
 ## Reproducing Results
 
 ### Setup
 
+1. Install dependencies:
+
 ```bash
 pip install -r requirements.txt
+```
+
+2. Download automated datasets (SST-2):
+
+```bash
 bash get_data.sh
+```
+
+3. Download manual dataset (IMDB) and local HuggingFace cache:
+   Download `cal_data_and_model.zip` from [Google Drive Download Link](https://drive.google.com/file/d/1oadBVvjrsydEKMWkcalQB7ViBKQnZmD6/view?usp=sharing) and extract it in the `active_learning/` directory:
+
+```bash
+unzip cal_data_and_model.zip
+# This will place files into data/IMDB/ and cache/bert-base-cased-local/
 ```
 
 ### Exp 1: End-to-End (Table 3)

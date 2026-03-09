@@ -45,7 +45,15 @@ fi
 echo "---"
 
 # (4) PubMed
-# (5) IMDB
+# (5) IMDB (and local HuggingFace cache for bert-base-cased)
+echo "Downloading IMDB Dataset and cached BERT model..."
+echo "Please download the 'cal_data_and_model.zip' file from the following Google Drive link:"
+echo "  https://drive.google.com/file/d/1oadBVvjrsydEKMWkcalQB7ViBKQnZmD6/view?usp=sharing"
+echo "Once downloaded, place it in the 'active_learning' directory and run:"
+echo "  unzip cal_data_and_model.zip"
+echo "This will extract 'data/IMDB' and 'cache/bert-base-cased-local' to their correct locations."
+echo "---"
+
 # (6) AG_NEWS
 # (7) DBPEDIA
 
