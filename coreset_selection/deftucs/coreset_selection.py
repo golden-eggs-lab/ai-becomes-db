@@ -130,14 +130,15 @@ def baseline_selection(vectors: np.ndarray, K: int, A: int, seed: int = 42, verb
 
 
 def optimized_selection(vectors: np.ndarray, K: int, A: int, seed: int = 42, 
-                        nlist: int = 256, nprobe: int = 128, verbose: bool = True):
+                        nlist: int = 256, nprobe: int = 128, verbose: bool = True,
+                        is_ann: bool = True, is_topk: bool = True, is_reuse_l2: bool = True):
     """
-    Optimized coreset selection: ANN KMeans (FAISS IVF) + Cache L2 distances.
+    Optimized coreset selection: Configurable optimization switches for IV1, IV2, IV3.
     
     Key optimizations:
-    1. Use FAISS IVF index for approximate nearest neighbor in KMeans
-    2. Cache L2 distances computed during KMeans
-    3. Convert cached L2 to cosine via algebraic identity (no recomputation)
+    1. is_ann: Use FAISS IVF index for approximate nearest neighbor in KMeans
+    2. is_reuse_l2: Cache L2 distances computed during KMeans and convert to cosine
+    3. is_topk: Use np.argpartition for O(N) top-k selection instead of O(N log N) argsort
     
     Args:
         vectors: (N, D) embedding matrix
@@ -147,6 +148,9 @@ def optimized_selection(vectors: np.ndarray, K: int, A: int, seed: int = 42,
         nlist: Number of cells for IVF index (will be capped based on K)
         nprobe: Number of cells to probe for search
         verbose: Whether to show progress
+        is_ann: Toggle IV1
+        is_topk: Toggle IV3
+        is_reuse_l2: Toggle IV2
         
     Returns:
         selected_indices: Array of selected sample indices
@@ -167,41 +171,48 @@ def optimized_selection(vectors: np.ndarray, K: int, A: int, seed: int = 42,
     selected_init = rng.choice(N, size=K, replace=False)
     centroids = vectors[selected_init].copy()
     
-    # Build IVF index
-    sqrtK = max(1, int(round(math.sqrt(K))))
-    effective_nlist = min(nlist, sqrtK)
-    
-    quantizer = faiss.IndexFlatL2(dim)
-    index_ivf = faiss.IndexIVFFlat(quantizer, dim, effective_nlist)
-    
-    # Train with random sample
-    min_train = 39 * effective_nlist
-    train_size = min(N, max(min_train, 10000))
-    train_idx = rng.choice(N, size=train_size, replace=False)
-    train_sample = vectors[train_idx].astype(np.float32)
-    index_ivf.train(train_sample)
-    
-    # Set nprobe
-    target_probe = max(1, int(0.5 * effective_nlist))
-    index_ivf.nprobe = min(nprobe, effective_nlist, target_probe)
-    
-    if verbose:
-        print(f"  FAISS config: nlist={effective_nlist}, nprobe={index_ivf.nprobe}")
-    
+    if is_ann:
+        # Build IVF index
+        sqrtK = max(1, int(round(math.sqrt(K))))
+        effective_nlist = min(nlist, sqrtK)
+        
+        quantizer = faiss.IndexFlatL2(dim)
+        index_ivf = faiss.IndexIVFFlat(quantizer, dim, effective_nlist)
+        
+        # Train with random sample
+        min_train = 39 * effective_nlist
+        train_size = min(N, max(min_train, 10000))
+        train_idx = rng.choice(N, size=train_size, replace=False)
+        train_sample = vectors[train_idx].astype(np.float32)
+        index_ivf.train(train_sample)
+        
+        # Set nprobe
+        target_probe = max(1, int(0.5 * effective_nlist))
+        index_ivf.nprobe = min(nprobe, effective_nlist, target_probe)
+        
+        if verbose:
+            print(f"  FAISS config: nlist={effective_nlist}, nprobe={index_ivf.nprobe}")
+            
     tol = 1e-4
     max_iter = 50
     labels = None
     l2_all = None
     
-    iterator = tqdm(range(max_iter), desc="KMeans (ANN)") if verbose else range(max_iter)
+    iterator = tqdm(range(max_iter), desc=f"KMeans ({'ANN' if is_ann else 'Exact'})") if verbose else range(max_iter)
     
     for iter_idx in iterator:
-        # ANN search
-        index_ivf.reset()
-        index_ivf.add(centroids.astype(np.float32))
-        D, I = index_ivf.search(vectors.astype(np.float32), 1)
-        labels = I.ravel().astype(np.int32)
-        l2_all = D.ravel()  # Squared L2 distances (FAISS returns squared)
+        if is_ann:
+            # ANN search
+            index_ivf.reset()
+            index_ivf.add(centroids.astype(np.float32))
+            D, I = index_ivf.search(vectors.astype(np.float32), 1)
+            labels = I.ravel().astype(np.int32)
+            l2_all = D.ravel()  # Squared L2 distances (FAISS returns squared)
+        else:
+            # Exact search via numpy broadcast
+            dists = np.sum((vectors[:, None, :] - centroids[None, :, :]) ** 2, axis=2)
+            labels = np.argmin(dists, axis=1).astype(np.int32)
+            l2_all = dists[np.arange(N), labels]
         
         # Update centroids
         new_centroids = np.zeros_like(centroids)
@@ -219,14 +230,23 @@ def optimized_selection(vectors: np.ndarray, K: int, A: int, seed: int = 42,
         
         # Check convergence
         diff = np.linalg.norm(new_centroids - centroids)
-        if diff / max(np.linalg.norm(centroids), 1e-8) < tol:
+        centroid_norm = np.linalg.norm(centroids)
+        relative_change = diff / max(centroid_norm, 1e-8)
+        if verbose:
+            iterator.set_postfix({"change": f"{relative_change:.2e}"})
+            
+        if relative_change < tol:
             centroids = new_centroids
-            # Final assignment with cached distances
-            index_ivf.reset()
-            index_ivf.add(centroids.astype(np.float32))
-            D, I = index_ivf.search(vectors.astype(np.float32), 1)
-            labels = I.ravel().astype(np.int32)
-            l2_all = D.ravel()
+            if is_ann:
+                index_ivf.reset()
+                index_ivf.add(centroids.astype(np.float32))
+                D, I = index_ivf.search(vectors.astype(np.float32), 1)
+                labels = I.ravel().astype(np.int32)
+                l2_all = D.ravel()
+            else:
+                dists = np.sum((vectors[:, None, :] - centroids[None, :, :]) ** 2, axis=2)
+                labels = np.argmin(dists, axis=1).astype(np.int32)
+                l2_all = dists[np.arange(N), labels]
             break
         centroids = new_centroids
     
@@ -247,44 +267,54 @@ def optimized_selection(vectors: np.ndarray, K: int, A: int, seed: int = 42,
         if len(cluster_indices) == 0:
             continue
         
-        # Reuse L2 distances to compute cosine (no recomputation!)
-        # cos(a,b) = dot(a,b) / (||a|| * ||b||)
-        # dot(a,b) = (||a||² + ||b||² - ||a-b||²) / 2
-        l2_dist_sq = l2_all[cluster_indices]
-        v_norms_sq = vector_norms_sq[cluster_indices]
-        c_norm_sq = centroid_norms_sq[cluster_id]
-        
-        dot_products = 0.5 * (c_norm_sq + v_norms_sq - l2_dist_sq)
-        v_norms = np.sqrt(v_norms_sq)
-        c_norm = np.sqrt(c_norm_sq)
-        
-        denominator = v_norms * c_norm
-        safe_denominator = np.maximum(denominator, 1e-12)
-        cosine_sim = dot_products / safe_denominator
-        cosine_sim = np.clip(cosine_sim, -1.0, 1.0)
-        cosine_dists = 1 - cosine_sim
+        if is_reuse_l2:
+            # Reuse L2 distances to compute cosine (no recomputation!)
+            l2_dist_sq = l2_all[cluster_indices]
+            v_norms_sq = vector_norms_sq[cluster_indices]
+            c_norm_sq = centroid_norms_sq[cluster_id]
+            
+            dot_products = 0.5 * (c_norm_sq + v_norms_sq - l2_dist_sq)
+            v_norms = np.sqrt(v_norms_sq)
+            c_norm = np.sqrt(c_norm_sq)
+            
+            denominator = v_norms * c_norm
+            safe_denominator = np.maximum(denominator, 1e-12)
+            cosine_sim = dot_products / safe_denominator
+            cosine_sim = np.clip(cosine_sim, -1.0, 1.0)
+            cosine_dists = 1 - cosine_sim
+        else:
+            # Recompute cosine distances
+            cluster_vectors = vectors[cluster_indices]
+            centroid = centroids[cluster_id].reshape(1, -1)
+            cosine_dists = cosine_distances(cluster_vectors, centroid).reshape(-1)
         
         # Select easy (closest) and hard (farthest) samples
         num_easy = min(int(0.5 * A), len(cosine_dists))
         num_hard = min(int(0.5 * A), len(cosine_dists) - num_easy)
         
         if num_easy + num_hard > 0:
-            # IV3 Optimization: Top-k selection via argpartition instead of full argsort
-            if num_easy == 0:
-                easy_indices = np.empty(0, dtype=int)
-            elif num_easy >= len(cosine_dists):
-                easy_indices = np.arange(len(cosine_dists))
-            else:
-                easy_indices = np.argpartition(cosine_dists, num_easy - 1)[:num_easy]
+            if is_topk:
+                # IV3 Optimization: Top-k selection via argpartition instead of full argsort
+                if num_easy == 0:
+                    easy_indices = np.empty(0, dtype=int)
+                elif num_easy >= len(cosine_dists):
+                    easy_indices = np.arange(len(cosine_dists))
+                else:
+                    easy_indices = np.argpartition(cosine_dists, num_easy - 1)[:num_easy]
 
-            if num_hard == 0:
-                hard_indices = np.empty(0, dtype=int)
-            elif num_hard >= len(cosine_dists):
-                hard_indices = np.arange(len(cosine_dists))
-            else:
-                hard_indices = np.argpartition(-cosine_dists, num_hard - 1)[:num_hard]
+                if num_hard == 0:
+                    hard_indices = np.empty(0, dtype=int)
+                elif num_hard >= len(cosine_dists):
+                    hard_indices = np.arange(len(cosine_dists))
+                else:
+                    hard_indices = np.argpartition(-cosine_dists, num_hard - 1)[:num_hard]
 
-            selected = list(easy_indices) + list(hard_indices)
+                selected = list(easy_indices) + list(hard_indices)
+            else:
+                # Full argsort
+                sorted_indices = np.argsort(cosine_dists)
+                selected = list(sorted_indices[:num_easy]) + list(sorted_indices[-num_hard:])
+                
             Dc_indices.extend(cluster_indices[selected])
     
     timing["selection"] = time.time() - start_time
