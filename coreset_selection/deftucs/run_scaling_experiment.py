@@ -6,54 +6,37 @@ Measure: e2e time (selection only), downstream SARI, recall
 Baseline (numpy) × 1 run, Optimized (FAISS) × 2 runs per ratio
 """
 
-import sys
 import os
 import json
-import time
 import argparse
 import numpy as np
 from pathlib import Path
+import subprocess
 
-sys.path.insert(0, str(Path(__file__).parent))
-sys.path.insert(0, str(Path(__file__).parent.parent / "in_memory_and_milvus"))
-
-from config import ARTIFACTS_DIR, CACHE_DIR
+from config import ARTIFACTS_DIR
 from prepare_wikilarge import prepare_wikilarge
-from demo_memory import run_core_set_selection
+from coreset_selection import baseline_selection, optimized_selection
 
-# Same params as run_wikilarge_comparison.py
+# Same params
 SELECTION_RATIO = 0.325
 K = 7
-
 
 def do_selection(setting, embeddings, n_samples):
     """Run coreset selection. Returns (selected_indices, elapsed)."""
     A = max(1, int(n_samples * SELECTION_RATIO / K))
     
     if setting == "baseline":
-        selected_indices, elapsed, km_stats = run_core_set_selection(
-            embeddings, K=K, A=A, alpha=0.5, beta=0.5,
-            is_ann=False, is_topk=False, is_reuse_l2=False,
-            use_vecdb=False, rng_seed=42,
-            use_faiss_exact=False, use_blocked_knn=False,
-        )
+        selected_indices, timing = baseline_selection(embeddings, K, A, seed=42, verbose=False)
     else:
-        selected_indices, elapsed, km_stats = run_core_set_selection(
-            embeddings, K=K, A=A, alpha=0.5, beta=0.5,
-            is_ann=True, is_topk=True, is_reuse_l2=True,
-            use_vecdb=False, rng_seed=42,
-            use_faiss_exact=False, use_hnsw=False,
-            use_blocked_knn=False, probe_frac=0.5,
-        )
+        selected_indices, timing = optimized_selection(embeddings, K, A, seed=42, verbose=False)
     
-    return np.unique(np.array(selected_indices)), elapsed
-
+    return np.unique(np.array(selected_indices)), timing["total"]
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--ratios', nargs='+', type=float, default=[1.0, 0.7, 0.5, 0.3])
     parser.add_argument('--output-dir', type=str, default=str(ARTIFACTS_DIR / 'wikilarge_scaling'))
-    parser.add_argument('--skip-downstream', action='store_true')
+    parser.add_argument('--skip-downstream', action='store_true', help="Skip fine-tuning and evaluation")
     args = parser.parse_args()
     
     os.makedirs(args.output_dir, exist_ok=True)
@@ -115,24 +98,31 @@ def main():
         
         # Downstream (SARI) — skip if requested
         if not args.skip_downstream:
-            from run_wikilarge_comparison import finetune, run_evaluation, OUTPUT_DIR
+            print("\n[Running Downstream Fine-tuning + Evaluation using decoupled scripts]")
             
-            # Finetune + eval for baseline
+            # Save decoupled input files for this ratio
             base_samples = [sub_samples[i] for i in base_idx]
-            print(f"\n[Downstream: Baseline] {len(base_samples)} samples")
-            finetune("baseline", base_samples)
+            base_samples_path = os.path.join(args.output_dir, f"base_samples_r{ratio}.json")
+            with open(base_samples_path, 'w') as f: json.dump(base_samples, f)
             
-            # Finetune + eval for optimized (first run)
-            # Map global indices back to sub_samples indices
             opt_sub_idx = [i for i in range(len(subset_idx)) if subset_idx[i] in opt_orig_idx_list[0]]
             opt_samples = [sub_samples[i] for i in opt_sub_idx]
-            print(f"[Downstream: Optimized] {len(opt_samples)} samples")
-            finetune("optimized", opt_samples)
+            opt_samples_path = os.path.join(args.output_dir, f"opt_samples_r{ratio}.json")
+            with open(opt_samples_path, 'w') as f: json.dump(opt_samples, f)
             
-            # Eval both
-            eval_results = run_evaluation(["baseline", "optimized"])
-            ratio_results['baseline_sari'] = eval_results.get('baseline', {}).get('sari')
-            ratio_results['optimized_sari'] = eval_results.get('optimized', {}).get('sari')
+            base_model_dir = os.path.join(args.output_dir, f"base_model_r{ratio}")
+            opt_model_dir = os.path.join(args.output_dir, f"opt_model_r{ratio}")
+            
+            # Subprocess calls
+            subprocess.run(["python", "benchmark_finetune.py", "--samples", base_samples_path, "--output", base_model_dir], check=True)
+            subprocess.run(["python", "benchmark_finetune.py", "--samples", opt_samples_path, "--output", opt_model_dir], check=True)
+            subprocess.run(["python", "benchmark_evaluate.py", "--model-dir", base_model_dir], check=True)
+            subprocess.run(["python", "benchmark_evaluate.py", "--model-dir", opt_model_dir], check=True)
+            
+            with open(os.path.join(base_model_dir, "eval_results.json")) as f:
+                ratio_results['baseline_sari'] = json.load(f).get('sari')
+            with open(os.path.join(opt_model_dir, "eval_results.json")) as f:
+                ratio_results['optimized_sari'] = json.load(f).get('sari')
         
         results[str(ratio)] = ratio_results
         
@@ -154,7 +144,6 @@ def main():
             print(f"  SARI: baseline={d['baseline_sari']:.2f}, opt={d['optimized_sari']:.2f}")
     
     print(f"\nSaved to {args.output_dir}/scaling_results.json")
-
 
 if __name__ == "__main__":
     main()

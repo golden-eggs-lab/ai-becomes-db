@@ -31,7 +31,8 @@ python prepare_data.py
 ### Exp 1: End-to-End (Table 3)
 
 ```bash
-python run_finetune_comparison.py --setting both
+bash benchmark_e2e_all.sh
+# Runs decoupled selection, finetune, and evaluation across datasets
 # Paper: CoEDIT 24.98s → 14.51s (-41.91%), WikiLarge 135.64s → 79.43s (-41.44%)
 ```
 
@@ -40,12 +41,6 @@ python run_finetune_comparison.py --setting both
 ```bash
 python run_ablation.py
 # Tests: Original / +IV1 / +IV2 / +IV3 / +All
-```
-
-### Exp 5: Cross-Setup (Table 7)
-
-```bash
-python run_milvus_comparison.py
 ```
 
 ### Exp 7: Dataset Size (Figure 4 top)
@@ -66,11 +61,12 @@ python run_ann_hyperparam_coreset.py
 
 | File                            | Description                                     |
 | ------------------------------- | ----------------------------------------------- |
-| `coreset_selection.py`          | Core selection: original and IV-aligned         |
-| `run_finetune_comparison.py`    | E2E: selection → fine-tune → evaluation (Exp 1) |
-| `run_comparison.py`             | Selection-only time benchmark                   |
+| `coreset_selection.py`          | Core selection logic: original and IV-aligned   |
+| `benchmark_e2e_all.sh`          | Master script running the decoupled E2E testing |
+| `benchmark_selection.py`        | Decoupled selection script for E2E              |
+| `benchmark_finetune.py`         | Decoupled finetuning script for E2E             |
+| `benchmark_evaluate.py`         | Decoupled independent evaluation script for E2E |
 | `run_ablation.py`               | Ablation study (Exp 2)                          |
-| `run_milvus_comparison.py`      | Milvus vector-database (Exp 5)                  |
 | `run_scaling_experiment.py`     | Dataset size ratio (Exp 7)                      |
 | `run_ann_hyperparam_coreset.py` | ANN sweep (Exp 9)                               |
-| `evaluate.py`                   | SARI, BLEU, ROUGE-L, FKGL metrics               |
+| `evaluate.py`                   | Core metrics evaluation logic                   |
