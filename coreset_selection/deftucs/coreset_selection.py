@@ -269,8 +269,22 @@ def optimized_selection(vectors: np.ndarray, K: int, A: int, seed: int = 42,
         num_hard = min(int(0.5 * A), len(cosine_dists) - num_easy)
         
         if num_easy + num_hard > 0:
-            sorted_indices = np.argsort(cosine_dists)
-            selected = list(sorted_indices[:num_easy]) + list(sorted_indices[-num_hard:])
+            # IV3 Optimization: Top-k selection via argpartition instead of full argsort
+            if num_easy == 0:
+                easy_indices = np.empty(0, dtype=int)
+            elif num_easy >= len(cosine_dists):
+                easy_indices = np.arange(len(cosine_dists))
+            else:
+                easy_indices = np.argpartition(cosine_dists, num_easy - 1)[:num_easy]
+
+            if num_hard == 0:
+                hard_indices = np.empty(0, dtype=int)
+            elif num_hard >= len(cosine_dists):
+                hard_indices = np.arange(len(cosine_dists))
+            else:
+                hard_indices = np.argpartition(-cosine_dists, num_hard - 1)[:num_hard]
+
+            selected = list(easy_indices) + list(hard_indices)
             Dc_indices.extend(cluster_indices[selected])
     
     timing["selection"] = time.time() - start_time
