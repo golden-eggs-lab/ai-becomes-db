@@ -1,18 +1,18 @@
-# 优化版本：避免使用 approxSimilarityJoin，改用更高效的方式
-# 核心思想：
-# 1. LSH hash 在 Python 端预计算并 collect
-# 2. 对每个 query，在 Python 端快速找到候选 bucket
-# 3. 只对候选集做 Spark 计算（大幅减少数据量）
+# Optimized version: Avoid using approxSimilarityJoin, use a more efficient approach
+# Core idea:
+# 1. Pre-compute and collect LSH hashes on the Python side
+# 2. For each query, quickly find candidate buckets on the Python side
+# 3. Only perform Spark computation on the candidate set (significantly reduces data volume)
 
 import numpy as np
 from collections import defaultdict
 
 def compute_knn_lsh_optimized(spark, lsh_model, df_train_hashed, ftrain_spark, test_vectors, K, batch_size):
     """
-    优化的 LSH KNN：避免 approxSimilarityJoin 的 overhead
+    Optimized LSH KNN: Avoid the overhead of approxSimilarityJoin
     """
-    # Step 1: Collect LSH hashes to driver (一次性)
-    # 这个可以接受因为 training data 只有 64k
+    # Step 1: Collect LSH hashes to driver (one-time)
+    # This is acceptable because training data is only 64k
     print("Collecting LSH hashes to driver...")
     train_hashes = df_train_hashed.select("train_id", "hashes").collect()
     
@@ -42,7 +42,7 @@ def compute_knn_lsh_optimized(spark, lsh_model, df_train_hashed, ftrain_spark, t
         if batch_idx % 10 == 0 or batch_idx == n_batches - 1:
             print(f"  Batch {batch_idx + 1}/{n_batches} (queries {batch_start}-{batch_end})")
         
-        # Step 3: For each query, find候选 using hash table
+        # Step 3: For each query, find candidates using hash table
         for local_idx, query_vec in enumerate(batch_vectors):
             global_idx = batch_start + local_idx
             

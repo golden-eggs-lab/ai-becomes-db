@@ -59,7 +59,7 @@ Build/query time is logged within `run_imagenet.py` output.
 
 ```bash
 python run_milvus_benchmark.py                      # Milvus
-python run_imagenet_spark_lsh_optimized.py           # Spark
+bash run_spark_comparison.sh                        # Spark (ImageNet, 5% sample)
 ```
 
 ### Exp 7: Dataset Size (Figure 4 top)
@@ -85,6 +85,7 @@ python run_ann_hyperparam_ood.py
 | `feat_extract.py`                     | Feature extraction (CIFAR-10)                    |
 | `feat_extract_largescale.py`          | Feature extraction (ImageNet, mmap)              |
 | `run_milvus_benchmark.py`             | Milvus (Exp 5)                                   |
-| `run_imagenet_spark_lsh_optimized.py` | Spark (Exp 5)                                    |
+| `run_spark_comparison.sh`             | Spark comparison (Exp 5)                         |
+| `run_imagenet_spark_lsh_optimized.py` | Standalone Spark LSH logic reference function    |
 | `run_scaling.sh`                      | Dataset size ratio (Exp 7)                       |
 | `run_ann_hyperparam_ood.py`           | ANN sweep (Exp 9)                                |
