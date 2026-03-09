@@ -50,6 +50,10 @@ bash scripts/run_ablation.sh
 # SemDeDup: 86.51s → 1.13s (+IV1) → 28.91s (+IV2) → 0.37s (+All)
 ```
 
+### Exp 3: Breakdown (Table 5)
+
+> **Note**: The component-level breakdown timing data (Search, index-building, etc.) is automatically logged as part of the console output during **Exp 2** (Ablation). No separate script is required.
+
 ### Exp 4: Overhead (Table 6)
 
 ```bash
@@ -78,7 +82,7 @@ SemDeDup is covered by the multi-algorithm cache benchmark:
 
 ```bash
 # Run from active_learning/ directory
-python run_cache_benchmark_multi.py --algorithms SemDeDup
+python run_cache_benchmark_ratio.py --algorithms SemDeDup
 ```
 
 ### Exp 9: ANN Sweep (Figure 5)

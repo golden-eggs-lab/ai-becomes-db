@@ -43,7 +43,7 @@ Compares original vs IV-aligned runtime and task performance.
 | Algorithm            | Script                                                                 |
 | -------------------- | ---------------------------------------------------------------------- |
 | CAL                  | `active_learning/run_e2e_comparison.sh`                                |
-| DEFT-UCS             | `coreset_selection/deftucs/run_finetune_comparison.py`                 |
+| DEFT-UCS             | `coreset_selection/deftucs/benchmark_e2e_all.sh`                       |
 | CRAIG                | `coreset_selection/craig/run_craig_benchmark.py`                       |
 | SemDeDup & FairDeDup | `semantic_dedup/experiments/run_cifar10_experiment.py`                 |
 | KNN-OOD              | `ood_detection/run_imagenet.py`, `ood_detection/run_cifar10_knnood.py` |
@@ -81,15 +81,15 @@ Build vs query time and peak cache size.
 
 In-memory, vector-database, and distributed setups.
 
-| Algorithm            | Milvus                                          | Spark                                 |
-| -------------------- | ----------------------------------------------- | ------------------------------------- |
-| CAL                  | `run_milvus_comparison.sh`                      | `run_spark_comparison.sh`             |
-| DEFT-UCS             | `run_milvus_comparison.py`                      | —                                     |
-| CRAIG                | `run_craig_benchmark.py --backend milvus/spark` | same                                  |
-| SemDeDup & FairDeDup | `run_cifar10_milvus_experiment.py`              | `run_semdedup_spark.py`               |
-| KNN-OOD              | `run_milvus_benchmark.py`                       | `run_imagenet_spark_lsh_optimized.py` |
-| KNN Prompting        | `run_milvus_comparison.sh`                      | `run_spark_comparison.sh`             |
-| SCIP                 | `run_milvus_simple.py`                          | `run_spark_fixed.py`                  |
+| Algorithm            | Milvus                                          | Spark                     |
+| -------------------- | ----------------------------------------------- | ------------------------- |
+| CAL                  | `run_milvus_comparison.sh`                      | `run_spark_comparison.sh` |
+| DEFT-UCS             | —                                               | —                         |
+| CRAIG                | `run_craig_benchmark.py --backend milvus/spark` | same                      |
+| SemDeDup & FairDeDup | `experiments/run_cifar10_milvus_experiment.py`  | `run_semdedup_spark.py`   |
+| KNN-OOD              | `run_milvus_benchmark.py`                       | `run_spark_comparison.sh` |
+| KNN Prompting        | `run_milvus_comparison.sh`                      | `run_spark_comparison.sh` |
+| SCIP                 | `run_milvus_simple.py`                          | `run_spark_fixed.py`      |
 
 ### Exp 6: Memory Constraint (Figure 3)
 

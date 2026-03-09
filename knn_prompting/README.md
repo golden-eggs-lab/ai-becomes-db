@@ -70,7 +70,7 @@ KNN Prompting is covered by the multi-algorithm cache benchmark:
 
 ```bash
 # Run from active_learning/ directory
-python run_cache_benchmark_multi.py --algorithms KNNPrompting
+python run_cache_benchmark_ratio.py --algorithms KNNPrompting
 ```
 
 ### Batch Comparison (Exp 2)
