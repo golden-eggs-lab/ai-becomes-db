@@ -43,6 +43,13 @@ python run_ablation.py
 # Tests: Original / +IV1 / +IV2 / +IV3 / +All
 ```
 
+### Exp 3: Breakdown (Table 5)
+
+```bash
+python run_ablation.py
+# The breakdown data (KMeans time vs Selection time) is automatically reported in the ablation output summary
+```
+
 ### Exp 7: Dataset Size (Figure 4 top)
 
 ```bash
