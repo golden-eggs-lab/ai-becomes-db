@@ -46,8 +46,8 @@ python run_ablation.py
 ### Exp 3: Breakdown (Table 5)
 
 ```bash
-python run_ablation.py
-# The breakdown data (KMeans time vs Selection time) is automatically reported in the ablation output summary
+python run_ablation_breakdown.py
+# Runs 3 times and outputs Component-level Time Breakdown (Mean±Std)
 ```
 
 ### Exp 7: Dataset Size (Figure 4 top)
@@ -74,6 +74,7 @@ python run_ann_hyperparam_coreset.py
 | `benchmark_finetune.py`         | Decoupled finetuning script for E2E             |
 | `benchmark_evaluate.py`         | Decoupled independent evaluation script for E2E |
 | `run_ablation.py`               | Ablation study (Exp 2)                          |
+| `run_ablation_breakdown.py`     | Granular component timing table (Exp 3)         |
 | `run_scaling_experiment.py`     | Dataset size ratio (Exp 7)                      |
 | `run_ann_hyperparam_coreset.py` | ANN sweep (Exp 9)                               |
 | `evaluate.py`                   | Core metrics evaluation logic                   |
